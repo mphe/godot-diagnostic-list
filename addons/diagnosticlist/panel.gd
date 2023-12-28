@@ -2,63 +2,79 @@
 extends Control
 class_name DiagnosticList_Panel
 
-class DiagnosticTheme extends RefCounted:
+class DiagnosticSeveritySettings extends RefCounted:
     var text: String
     var icon: Texture2D
     var color: Color
+    var hide: bool
+    var count: int = 0
 
-    func _init(text: String, icon: Texture2D, color: Color):
-        self.text = text
-        self.icon = icon
-        self.color = color
+    func _init(text_: String, icon_id: StringName, color_id: StringName, hide_: bool) -> void:
+        self.text = text_
+        self.icon = EditorInterface.get_editor_theme().get_icon(icon_id, &"EditorIcons")
+        self.color = EditorInterface.get_editor_theme().get_color(color_id, &"Editor")
+        self.hide = hide_
 
 
-# This array will be filled according to each severity type defined by LSP.
-# https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#diagnosticSeverity
-var _severity_themes: Array[DiagnosticTheme] = [ null, null, null, null ]
-var _script_icon := get_theme_icon(&"Script", &"EditorIcons")
+@onready var _btn_refresh_errors: Button = %"btn_refresh_errors"
+@onready var _error_list_tree: Tree = %"error_tree_list"
+@onready var _cb_auto_refresh: CheckBox = %"cb_auto_refresh"
+@onready var _cb_group_by_file: CheckBox = %"cb_group_by_file"
 
-var _btn_refresh_errors: Button
-var _error_list_tree: Tree
+# This array will be filled according to each severity type to allow direct indexing
+@onready var _filter_buttons: Array[Button] = [
+    %"btn_filter_errors",
+    %"btn_filter_warnings",
+    %"btn_filter_infos",
+    %"btn_filter_hints",
+]
+
+# This array will be filled according to each severity type to allow direct indexing
+@onready var _severity_settings: Array[DiagnosticSeveritySettings] = [
+    DiagnosticSeveritySettings.new("Error",   &"StatusError",   &"error_color",   not _filter_buttons[0].button_pressed),
+    DiagnosticSeveritySettings.new("Warning", &"StatusWarning", &"warning_color", not _filter_buttons[1].button_pressed),
+    DiagnosticSeveritySettings.new("Info",    &"Popup",         &"font_color",    not _filter_buttons[2].button_pressed),
+    DiagnosticSeveritySettings.new("Hint",    &"Info",          &"font_color",    not _filter_buttons[3].button_pressed),
+]
+
+@onready var _script_icon: Texture2D = get_theme_icon(&"Script", &"EditorIcons")
+
 var _script_paths: Array[String] = []
 var _client: DiagnosticList_LSPClient
 var _dirty: bool = true
 
-func _enter_tree() -> void:
-    _severity_themes = [
-        null,
-        DiagnosticTheme.new("Error", get_theme_icon(&"StatusError", &"EditorIcons"), get_theme_color(&"error_color", &"Editor")),
-        DiagnosticTheme.new("Warning", get_theme_icon(&"StatusWarning", &"EditorIcons"), get_theme_color(&"warning_color", &"Editor")),
-        DiagnosticTheme.new("Info", get_theme_icon(&"Popup", &"EditorIcons"), get_theme_color(&"font_color", &"Editor")),
-        DiagnosticTheme.new("Hint", get_theme_icon(&"Info", &"EditorIcons"), get_theme_color(&"font_color", &"Editor")),
-    ]
 
-    _script_icon = get_theme_icon(&"Script", &"EditorIcons")
-
-    _btn_refresh_errors = %"btn_refresh_errors"
-    _error_list_tree = %"error_tree_list"
-
+func _ready() -> void:
+    # Setup controls
     _btn_refresh_errors.connect("pressed", force_refresh_diagnostics)
+    _btn_refresh_errors.disabled = true  # Disable button until connected to LSP
 
-    # Disable buttons until connected to LSP
-    _btn_refresh_errors.disabled = true
+    for i in len(_filter_buttons):
+        var btn: Button = _filter_buttons[i]
+        var severity := _severity_settings[i]
+        # btn.theme_type_variation = &"EditorLogFilterButton"
+        btn.icon = severity.icon
+        btn.connect("toggled", _on_filter_toggled.bind(severity))
+
+    # These kinds of diagnostics do not exist in Godot LSP, so hide them for now.
+    _filter_buttons[DiagnosticList_LSPClient.DiagnosticSeverity.Info].hide()
+    _filter_buttons[DiagnosticList_LSPClient.DiagnosticSeverity.Hint].hide()
 
     _error_list_tree.columns = 3
     _error_list_tree.set_column_title(0, "Message")
     _error_list_tree.set_column_title(1, "File")
     _error_list_tree.set_column_title(2, "Line")
-    # _error_list_tree.set_column_title(2, "Column")
     _error_list_tree.set_column_title_alignment(0, HORIZONTAL_ALIGNMENT_LEFT)
     _error_list_tree.set_column_title_alignment(1, HORIZONTAL_ALIGNMENT_LEFT)
     _error_list_tree.set_column_title_alignment(2, HORIZONTAL_ALIGNMENT_LEFT)
-    # _error_list_tree.set_column_title_alignment(2, HORIZONTAL_ALIGNMENT_LEFT)
-    # _error_list_tree.column_titles_visible = true
     _error_list_tree.set_column_expand(0, true)
     _error_list_tree.connect("item_activated", _item_activated)
 
+    # Listen for file system changes
     var fs := EditorInterface.get_resource_filesystem()
     fs.connect("script_classes_updated", func(): _dirty = true)
 
+    # Refresh client
     set_client(_client)
 
 
@@ -75,13 +91,16 @@ func set_client(client: DiagnosticList_LSPClient) -> void:
         _btn_refresh_errors.disabled = _client == null
 
 
-func clear() -> void:
+func _clear() -> void:
     _error_list_tree.clear()
     _error_list_tree.create_item()  # root
 
+    for i in _severity_settings:
+        i.count = 0
+
 
 func force_refresh_diagnostics() -> void:
-    clear()
+    _clear()
     refresh_file_list()
 
     for path in _script_paths:
@@ -97,7 +116,6 @@ func refresh_file_list() -> void:
     print("Gathered ", len(_script_paths), " script_paths in ", (Time.get_ticks_usec() - time_begin) / 1000.0, " ms")
 
 
-## Expects searchpath without trailing slash
 func _gather_scripts(searchpath: String) -> Array[String]:
     var root := DirAccess.open(searchpath)
 
@@ -143,13 +161,15 @@ func _on_publish_diagnostics(diagnostics: Array[DiagnosticList_LSPClient.Diagnos
 
     for diag in diagnostics:
         var entry: TreeItem = _error_list_tree.create_item(item)
-        var theme := _severity_themes[diag.severity]
+        var severity_setting := _severity_settings[diag.severity]
+        severity_setting.count += 1
         # entry.set_custom_color(0, theme.color)
         entry.set_text(0, diag.message)
-        entry.set_icon(0, theme.icon)
+        entry.set_icon(0, severity_setting.icon)
         entry.set_text(1, uri)
         entry.set_text(2, "Line " + str(diag.line_start))
         entry.set_metadata(0, diag)  # Meta data is used in _item_activated to open the respective script
+        _filter_buttons[diag.severity].text = str(severity_setting.count)
 
 
 func _item_activated() -> void:
@@ -158,3 +178,7 @@ func _item_activated() -> void:
     # NOTE: Lines and columns are zero-based in LSP, but Godot expects one-based values
     EditorInterface.edit_script(load(str(diagnostic.uri)), diagnostic.line_start + 1, diagnostic.column_start + 1)
     EditorInterface.set_main_screen_editor("Script")
+
+
+func _on_filter_toggled(toggled_on: bool, severity_setting: DiagnosticSeveritySettings) -> void:
+    severity_setting.hide = not toggled_on

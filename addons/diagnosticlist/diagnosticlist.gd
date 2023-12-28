@@ -5,7 +5,6 @@ const panel_scene = preload("res://addons/diagnosticlist/panel.tscn")
 
 var _dock: DiagnosticList_Panel
 var _client: DiagnosticList_LSPClient
-var _script_paths: Array[String] = []
 
 
 func _enter_tree() -> void:

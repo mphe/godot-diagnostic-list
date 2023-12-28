@@ -9,10 +9,10 @@ const TICK_INTERVAL_SECONDS: float = 1.0
 
 
 enum DiagnosticSeverity {
-    Error = 1,
-    Warning = 2,
-    Info = 3,
-    Hint = 4
+    Error = 0,
+    Warning = 1,
+    Info = 2,
+    Hint = 3
 }
 
 
@@ -24,7 +24,7 @@ class Diagnostic extends RefCounted:
     var message: String
 
 
-@export var print_debug: bool = false
+@export var enable_debug_log: bool = false
 
 var _jsonrpc := JSONRPC.new()
 var _client := StreamPeerTCP.new()
@@ -50,6 +50,7 @@ func connect_lsp() -> void:
 
 
 func _restart_timer() -> void:
+    @warning_ignore("unsafe_method_access")
     var timer: SceneTreeTimer = Engine.get_main_loop().create_timer(TICK_INTERVAL_SECONDS, true, false, true)
     timer.connect("timeout", _on_tick)
 
@@ -104,9 +105,9 @@ func _read_data() -> Dictionary:
     # If Godot ever starts sending additional fields, this will break.
 
     var header := _read_header().strip_edges()
-    var content_length = int(header.substr(len("Content-Length")))
+    var content_length := int(header.substr(len("Content-Length")))
     var content := _read_content(content_length)
-    var json := JSON.parse_string(content)
+    var json: Dictionary = JSON.parse_string(content)
 
     if not json:
         log_error("Failed to parse JSON: %s" % content)
@@ -168,7 +169,7 @@ func _handle_response(json: Dictionary) -> void:
 func _parse_diagnostics(params: Dictionary) -> Array[Diagnostic]:
     var result: Array[Diagnostic] = []
 
-    var diagnostics: Array[Dictionary]
+    var diagnostics: Array[Dictionary] = []
     diagnostics.assign(params["diagnostics"])
 
     if diagnostics.is_empty():
@@ -182,7 +183,7 @@ func _parse_diagnostics(params: Dictionary) -> Array[Diagnostic]:
         var entry := Diagnostic.new()
         entry.uri = res_uri
         entry.message = diag["message"]
-        entry.severity = int(diag["severity"])
+        entry.severity = (int(diag["severity"]) - 1) as DiagnosticList_LSPClient.DiagnosticSeverity  # One-based in LSP, hence convert to the zero-based enum value
         entry.line_start = int(range_start["line"])
         entry.column_start = int(range_start["character"])
         result.append(entry)
@@ -249,7 +250,7 @@ func log_info(text: String) -> void:
 
 
 func log_debug(text: String) -> void:
-    if print_debug:
+    if enable_debug_log:
         log_info(text)
 
 func log_error(text: String) -> void:
