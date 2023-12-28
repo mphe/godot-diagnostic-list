@@ -3,9 +3,26 @@ class_name DiagnosticList_LSPClient
 
 signal on_initialized
 signal on_connected
-signal on_publish_diagnostics(params: Dictionary)
+signal on_publish_diagnostics(diagnostics: Array[Diagnostic])  # Receives all diagnostics for one file
 
 const TICK_INTERVAL_SECONDS: float = 1.0
+
+
+enum DiagnosticSeverity {
+    Error = 1,
+    Warning = 2,
+    Info = 3,
+    Hint = 4
+}
+
+
+class Diagnostic extends RefCounted:
+    var uri: StringName  # Represents the file path as res:// path
+    var line_start: int  # zero-based
+    var column_start: int  # zero-based
+    var severity: DiagnosticSeverity
+    var message: String
+
 
 @export var print_debug: bool = false
 
@@ -139,12 +156,38 @@ func _read_header() -> String:
 func _handle_response(json: Dictionary) -> void:
     # Diagnostics received
     if json.get("method") == "textDocument/publishDiagnostics":
-        emit_signal("on_publish_diagnostics", json["params"])
-
+        emit_signal("on_publish_diagnostics", _parse_diagnostics(json["params"]))
     # Initialization response
     elif json.get("id") == 0:
         _send_notification("initialized", {})
         emit_signal("on_initialized")
+
+
+## Parses the diagnostic information according to the LSP specification.
+## https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
+func _parse_diagnostics(params: Dictionary) -> Array[Diagnostic]:
+    var result: Array[Diagnostic] = []
+
+    var diagnostics: Array[Dictionary]
+    diagnostics.assign(params["diagnostics"])
+
+    if diagnostics.is_empty():
+        return result
+
+    var uri: String = params["uri"]
+    var res_uri := StringName(ProjectSettings.localize_path(uri.replace("file://", "")))
+
+    for diag in diagnostics:
+        var range_start: Dictionary = diag["range"]["start"]
+        var entry := Diagnostic.new()
+        entry.uri = res_uri
+        entry.message = diag["message"]
+        entry.severity = int(diag["severity"])
+        entry.line_start = int(range_start["line"])
+        entry.column_start = int(range_start["character"])
+        result.append(entry)
+
+    return result
 
 
 func _send_request(method: String, params: Dictionary) -> int:
@@ -175,14 +218,7 @@ func _initialize() -> void:
         "rootUri": "file://" + root_path,
         "capabilities": {
             "textDocument": {
-                "publishDiagnostics": {
-                    # "relatedInformation": true,
-                    # "versionSupport": true,
-                    # "tagSupport": {
-                    #     "valueSet": [ 1, 2 ]
-                    # },
-                    # "codeDescriptionSupport": true,
-                },
+                "publishDiagnostics": {},
             },
         },
     })

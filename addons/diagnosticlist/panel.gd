@@ -18,7 +18,6 @@ class DiagnosticTheme extends RefCounted:
 var _severity_themes: Array[DiagnosticTheme] = [ null, null, null, null ]
 var _script_icon := get_theme_icon(&"Script", &"EditorIcons")
 
-var _btn_refresh_files: Button
 var _btn_refresh_errors: Button
 var _error_list_tree: Tree
 var _script_paths: Array[String] = []
@@ -36,26 +35,26 @@ func _enter_tree() -> void:
 
     _script_icon = get_theme_icon(&"Script", &"EditorIcons")
 
-    _btn_refresh_files = %"btn_refresh_files"
     _btn_refresh_errors = %"btn_refresh_errors"
     _error_list_tree = %"error_tree_list"
 
-    _btn_refresh_files.connect("pressed", refresh_file_list)
     _btn_refresh_errors.connect("pressed", force_refresh_diagnostics)
 
     # Disable buttons until connected to LSP
-    _btn_refresh_files.disabled = true
     _btn_refresh_errors.disabled = true
 
-    _error_list_tree.columns = 2
+    _error_list_tree.columns = 3
     _error_list_tree.set_column_title(0, "Message")
-    _error_list_tree.set_column_title(1, "Line")
+    _error_list_tree.set_column_title(1, "File")
+    _error_list_tree.set_column_title(2, "Line")
     # _error_list_tree.set_column_title(2, "Column")
     _error_list_tree.set_column_title_alignment(0, HORIZONTAL_ALIGNMENT_LEFT)
     _error_list_tree.set_column_title_alignment(1, HORIZONTAL_ALIGNMENT_LEFT)
+    _error_list_tree.set_column_title_alignment(2, HORIZONTAL_ALIGNMENT_LEFT)
     # _error_list_tree.set_column_title_alignment(2, HORIZONTAL_ALIGNMENT_LEFT)
     # _error_list_tree.column_titles_visible = true
     _error_list_tree.set_column_expand(0, true)
+    _error_list_tree.connect("item_activated", _item_activated)
 
     var fs := EditorInterface.get_resource_filesystem()
     fs.connect("script_classes_updated", func(): _dirty = true)
@@ -73,7 +72,6 @@ func set_client(client: DiagnosticList_LSPClient) -> void:
         _client.connect("on_publish_diagnostics", _on_publish_diagnostics)
 
     if is_inside_tree():
-        _btn_refresh_files.disabled = _client == null
         _btn_refresh_errors.disabled = _client == null
 
 
@@ -94,7 +92,6 @@ func force_refresh_diagnostics() -> void:
 
 func refresh_file_list() -> void:
     var time_begin := Time.get_ticks_usec()
-    # _script_paths = _gather_scripts(ProjectSettings.globalize_path("res://"))
     _script_paths = _gather_scripts("res://")
 
     print("Gathered ", len(_script_paths), " script_paths in ", (Time.get_ticks_usec() - time_begin) / 1000.0, " ms")
@@ -134,27 +131,30 @@ func _gather_scripts(searchpath: String) -> Array[String]:
     return paths
 
 
-func _on_publish_diagnostics(params: Dictionary) -> void:
-    # https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
-
-    var diagnostics: Array[Dictionary]
-    diagnostics.assign(params["diagnostics"])
-
+func _on_publish_diagnostics(diagnostics: Array[DiagnosticList_LSPClient.Diagnostic]) -> void:
     if diagnostics.is_empty():
         return
 
-    var uri: String = params["uri"]
     var item: TreeItem = _error_list_tree.create_item()
-    item.set_text(0, ProjectSettings.localize_path(uri.replace("file://", "")).replace("res://", ""))
+    var uri := diagnostics[0].uri.replace("res://", "")
+    item.set_text(0, uri)
     item.set_icon(0, _script_icon)
+    item.set_metadata(0, diagnostics[0])
 
     for diag in diagnostics:
-        var range_start: Dictionary = diag["range"]["start"]
         var entry: TreeItem = _error_list_tree.create_item(item)
-        var theme := _severity_themes[diag["severity"]]
+        var theme := _severity_themes[diag.severity]
         # entry.set_custom_color(0, theme.color)
-        entry.set_text(0, diag["message"])
+        entry.set_text(0, diag.message)
         entry.set_icon(0, theme.icon)
-        entry.set_text(1, "Line " + str(range_start["line"]))
-        # entry.set_text(1, "Line: %s, Column: %s" % [ str(range_start["line"]), str(range_start["character"]) ])
-        # entry.set_text(2, str(range_start["character"]))
+        entry.set_text(1, uri)
+        entry.set_text(2, "Line " + str(diag.line_start))
+        entry.set_metadata(0, diag)  # Meta data is used in _item_activated to open the respective script
+
+
+func _item_activated() -> void:
+    var selected: TreeItem = _error_list_tree.get_selected()
+    var diagnostic: DiagnosticList_LSPClient.Diagnostic = selected.get_metadata(0)
+    # NOTE: Lines and columns are zero-based in LSP, but Godot expects one-based values
+    EditorInterface.edit_script(load(str(diagnostic.uri)), diagnostic.line_start + 1, diagnostic.column_start + 1)
+    EditorInterface.set_main_screen_editor("Script")
