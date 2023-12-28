@@ -67,7 +67,21 @@ func _ready() -> void:
     _error_list_tree.set_column_title_alignment(0, HORIZONTAL_ALIGNMENT_LEFT)
     _error_list_tree.set_column_title_alignment(1, HORIZONTAL_ALIGNMENT_LEFT)
     _error_list_tree.set_column_title_alignment(2, HORIZONTAL_ALIGNMENT_LEFT)
+
+    var line_column_size := _error_list_tree.get_theme_font("font").get_string_size(
+        "Line 0000", HORIZONTAL_ALIGNMENT_LEFT, -1, _error_list_tree.get_theme_font_size("font_size"))
+
+    _error_list_tree.set_column_custom_minimum_width(0, 0)
+    _error_list_tree.set_column_custom_minimum_width(1, 0)
+    _error_list_tree.set_column_custom_minimum_width(2, int(line_column_size.x))
+
     _error_list_tree.set_column_expand(0, true)
+    _error_list_tree.set_column_expand(1, true)
+    _error_list_tree.set_column_expand(2, false)
+    _error_list_tree.set_column_clip_content(0, true)
+    _error_list_tree.set_column_clip_content(1, true)
+    _error_list_tree.set_column_clip_content(2, false)
+    _error_list_tree.set_column_expand_ratio(0, 3)
     _error_list_tree.connect("item_activated", _item_activated)
 
     # Listen for file system changes
@@ -167,7 +181,8 @@ func _on_publish_diagnostics(diagnostics: Array[DiagnosticList_LSPClient.Diagnos
         entry.set_text(0, diag.message)
         entry.set_icon(0, severity_setting.icon)
         entry.set_text(1, uri)
-        entry.set_text(2, "Line " + str(diag.line_start))
+        # entry.set_text(2, "Line " + str(diag.line_start))
+        entry.set_text(2, str(diag.line_start))
         entry.set_metadata(0, diag)  # Meta data is used in _item_activated to open the respective script
         _filter_buttons[diag.severity].text = str(severity_setting.count)
 
