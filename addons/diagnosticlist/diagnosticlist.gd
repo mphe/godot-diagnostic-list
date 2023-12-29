@@ -5,6 +5,7 @@ const panel_scene = preload("res://addons/diagnosticlist/panel.tscn")
 
 var _dock: DiagnosticList_Panel
 var _client: DiagnosticList_LSPClient
+var _provider: DiagnosticList_DiagnosticProvider
 
 
 func _enter_tree() -> void:
@@ -19,7 +20,6 @@ func _enter_tree() -> void:
     _client.connect_lsp()
 
     _dock = panel_scene.instantiate()
-    # _dock.set_client(_client)
     add_control_to_bottom_panel(_dock, "Diagnostics")
 
 
@@ -30,4 +30,5 @@ func _exit_tree() -> void:
 
 
 func _on_lsp_initialized() -> void:
-    _dock.set_client(_client)
+    _provider = DiagnosticList_DiagnosticProvider.new(_client)
+    _dock.start(_provider)

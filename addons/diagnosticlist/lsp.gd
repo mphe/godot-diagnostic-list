@@ -1,27 +1,20 @@
 extends RefCounted
 class_name DiagnosticList_LSPClient
 
-signal on_initialized
+# TODO: Consider caching script contents so only those scrips that actually changed need to be
+# reloaded from disk.
+
+## Triggered when connected to the LS.
 signal on_connected
-signal on_publish_diagnostics(diagnostics: Array[Diagnostic])  # Receives all diagnostics for one file
+
+## Triggered when LSP has been initialized
+signal on_initialized
+
+## Triggered when new diagnostics for a file arrived.
+signal on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic])
+
 
 const TICK_INTERVAL_SECONDS: float = 1.0
-
-
-enum DiagnosticSeverity {
-    Error = 0,
-    Warning = 1,
-    Info = 2,
-    Hint = 3
-}
-
-
-class Diagnostic extends RefCounted:
-    var uri: StringName  # Represents the file path as res:// path
-    var line_start: int  # zero-based
-    var column_start: int  # zero-based
-    var severity: DiagnosticSeverity
-    var message: String
 
 
 @export var enable_debug_log: bool = false
@@ -49,10 +42,30 @@ func connect_lsp() -> void:
     _restart_timer()
 
 
+func update_diagnostics(file_path: String) -> void:
+    var uri := "file://" + ProjectSettings.globalize_path(file_path).simplify_path()
+
+    _send_notification("textDocument/didOpen", {
+        "textDocument": {
+            "uri": uri,
+            "text": FileAccess.get_file_as_string(file_path),
+            "languageId": "gdscript",  # Unused by Godot LSP
+            "version": 0,  # Unused by Godot LSP
+        }
+    })
+
+    # Technically, the Godot LS does nothing on didClose, but send it anyway in case it changes in the future.
+    _send_notification("textDocument/didClose", {
+        "textDocument": {
+            "uri": uri
+        }
+    })
+
+
 func _restart_timer() -> void:
     @warning_ignore("unsafe_method_access")
     var timer: SceneTreeTimer = Engine.get_main_loop().create_timer(TICK_INTERVAL_SECONDS, true, false, true)
-    timer.connect("timeout", _on_tick)
+    timer.timeout.connect(_on_tick)
 
 
 func _on_tick() -> void:
@@ -91,7 +104,7 @@ func _update_status() -> bool:
             # First time connected -> run initialization
             if last_status != status:
                 log_info("Connected to LSP")
-                emit_signal("on_connected")
+                on_connected.emit()
                 _initialize()
 
     return true
@@ -157,17 +170,17 @@ func _read_header() -> String:
 func _handle_response(json: Dictionary) -> void:
     # Diagnostics received
     if json.get("method") == "textDocument/publishDiagnostics":
-        emit_signal("on_publish_diagnostics", _parse_diagnostics(json["params"]))
+        on_publish_diagnostics.emit(_parse_diagnostics(json["params"]))
     # Initialization response
     elif json.get("id") == 0:
         _send_notification("initialized", {})
-        emit_signal("on_initialized")
+        on_initialized.emit()
 
 
 ## Parses the diagnostic information according to the LSP specification.
 ## https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
-func _parse_diagnostics(params: Dictionary) -> Array[Diagnostic]:
-    var result: Array[Diagnostic] = []
+func _parse_diagnostics(params: Dictionary) -> Array[DiagnosticList_Diagnostic]:
+    var result: Array[DiagnosticList_Diagnostic] = []
 
     var diagnostics: Array[Dictionary] = []
     diagnostics.assign(params["diagnostics"])
@@ -175,15 +188,14 @@ func _parse_diagnostics(params: Dictionary) -> Array[Diagnostic]:
     if diagnostics.is_empty():
         return result
 
-    var uri: String = params["uri"]
-    var res_uri := StringName(ProjectSettings.localize_path(uri.replace("file://", "")))
+    var res_uri := StringName(ProjectSettings.localize_path(str(params["uri"]).replace("file://", "")))
 
     for diag in diagnostics:
         var range_start: Dictionary = diag["range"]["start"]
-        var entry := Diagnostic.new()
-        entry.uri = res_uri
+        var entry := DiagnosticList_Diagnostic.new()
+        entry.res_uri = res_uri
         entry.message = diag["message"]
-        entry.severity = (int(diag["severity"]) - 1) as DiagnosticList_LSPClient.DiagnosticSeverity  # One-based in LSP, hence convert to the zero-based enum value
+        entry.severity = (int(diag["severity"]) - 1) as DiagnosticList_Diagnostic.Severity  # One-based in LSP, hence convert to the zero-based enum value
         entry.line_start = int(range_start["line"])
         entry.column_start = int(range_start["character"])
         result.append(entry)
@@ -222,26 +234,6 @@ func _initialize() -> void:
                 "publishDiagnostics": {},
             },
         },
-    })
-
-
-func update_diagnostics(file_path: String) -> void:
-    var uri := "file://" + ProjectSettings.globalize_path(file_path).simplify_path()
-
-    _send_notification("textDocument/didOpen", {
-        "textDocument": {
-            "uri": uri,
-            "text": FileAccess.get_file_as_string(file_path),
-            "languageId": "gdscript",  # Unused by Godot LSP
-            "version": 0,  # Unused by Godot LSP
-        }
-    })
-
-    # Technically, the Godot LS does nothing on didClose, but send it anyway in case it changes in the future.
-    _send_notification("textDocument/didClose", {
-        "textDocument": {
-            "uri": uri
-        }
     })
 
 
