@@ -145,6 +145,11 @@ func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
     entry.set_metadata(0, diag)  # Meta data is used in _on_item_activated to open the respective script
 
 
+func _update_diagnostics(force: bool) -> void:
+    if _provider.refresh_diagnostics(force):
+        _label_refresh_time.text = "Updating..."
+
+
 func _on_item_activated() -> void:
     var selected: TreeItem = _error_list_tree.get_selected()
     var diagnostic: DiagnosticList_Diagnostic = selected.get_metadata(0)
@@ -157,7 +162,7 @@ func _on_item_activated() -> void:
 
 
 func _on_force_refresh() -> void:
-    _provider.refresh_diagnostics()
+    _update_diagnostics(true)
 
 
 func _on_diagnostics_finished() -> void:

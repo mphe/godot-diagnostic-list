@@ -27,7 +27,7 @@ var _timer: SceneTreeTimer
 
 
 func disconnect_lsp() -> void:
-    log_info("Disconnecting from LSP")
+    log_debug("Disconnecting from LSP")
     _client.disconnect_from_host()
 
 
@@ -59,13 +59,13 @@ func disable_processing() -> void:
     _start_stop_tick_timer()
 
 
-func update_diagnostics(file_path: String) -> void:
+func update_diagnostics(file_path: String, content: String) -> void:
     var uri := "file://" + ProjectSettings.globalize_path(file_path).simplify_path()
 
     _send_notification("textDocument/didOpen", {
         "textDocument": {
             "uri": uri,
-            "text": FileAccess.get_file_as_string(file_path),
+            "text": content,
             "languageId": "gdscript",  # Unused by Godot LSP
             "version": 0,  # Unused by Godot LSP
         }
@@ -133,7 +133,7 @@ func _update_status() -> bool:
         StreamPeerTCP.STATUS_CONNECTED:
             # First time connected -> run initialization
             if last_status != status:
-                log_info("Connected to LSP")
+                log_debug("Connected to LSP")
                 on_connected.emit()
                 _initialize()
 
@@ -268,13 +268,9 @@ func _initialize() -> void:
     })
 
 
-func log_info(text: String) -> void:
-    print("[DiagnosticList] ", text)
-
-
 func log_debug(text: String) -> void:
     if enable_debug_log:
-        log_info(text)
+        print("[DiagnosticList] ", text)
 
 func log_error(text: String) -> void:
     push_error("[DiagnosticList] ", text)
