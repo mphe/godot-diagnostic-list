@@ -17,6 +17,7 @@ class DiagnosticSeveritySettings extends RefCounted:
 @onready var _error_list_tree: Tree = %"error_tree_list"
 @onready var _cb_auto_refresh: CheckBox = %"cb_auto_refresh"
 @onready var _cb_group_by_file: CheckBox = %"cb_group_by_file"
+@onready var _label_refresh_time: Label = %"label_refresh_time"
 
 # This array will be filled according to each severity type to allow direct indexing
 @onready var _filter_buttons: Array[Button] = [
@@ -40,7 +41,6 @@ var _provider: DiagnosticList_DiagnosticProvider
 
 
 func _ready() -> void:
-    # Setup controls
     _btn_refresh_errors.connect("pressed", _on_force_refresh)
     _btn_refresh_errors.disabled = true  # Disable button until connected to LSP
 
@@ -50,7 +50,7 @@ func _ready() -> void:
         btn.icon = severity.icon
         btn.toggled.connect(_on_filter_toggled)
 
-    # These kinds of diagnostics do not exist in Godot LSP, so hide them for now.
+    # These kinds of severities do not exist yet in Godot LSP, so hide them for now.
     _filter_buttons[DiagnosticList_Diagnostic.Severity.Info].hide()
     _filter_buttons[DiagnosticList_Diagnostic.Severity.Hint].hide()
 
@@ -85,21 +85,20 @@ func start(provider: DiagnosticList_DiagnosticProvider) -> void:
     _provider = provider
     _provider.on_diagnostics_finished.connect(_on_diagnostics_finished)
     _btn_refresh_errors.disabled = false
-
-
-func _sort_by_severity(a: DiagnosticList_Diagnostic, b: DiagnosticList_Diagnostic) -> bool:
-    return a.severity < b.severity
+    _on_force_refresh()
 
 
 func refresh() -> void:
-    var group_by_file := _cb_group_by_file.button_pressed
-
     # NOTE: This list is sorted by file name as LSP publishes diagnostics per file
     # This is important as the group-by-file implementation relies on it.
     var diagnostics := _provider.get_diagnostics()
+    var group_by_file := _cb_group_by_file.button_pressed
 
     if not group_by_file:
         diagnostics.sort_custom(_sort_by_severity)
+
+    # Show refresh time
+    _label_refresh_time.text = str(int(_provider.get_refresh_time_usec() / 1000.0)) + " ms"
 
     # Clear tree
     _error_list_tree.clear()
@@ -128,6 +127,12 @@ func refresh() -> void:
         _filter_buttons[i].text = str(_provider.get_diagnostic_count(i))
 
 
+func _sort_by_severity(a: DiagnosticList_Diagnostic, b: DiagnosticList_Diagnostic) -> bool:
+    if a.severity == b.severity:
+        return a.res_uri < b.res_uri
+    return a.severity < b.severity
+
+
 func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
     var entry: TreeItem = _error_list_tree.create_item(parent)
     var severity_setting := _severity_settings[diag.severity]
@@ -138,10 +143,6 @@ func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
     # entry.set_text(2, "Line " + str(diag.line_start))
     entry.set_text(2, str(diag.line_start))
     entry.set_metadata(0, diag)  # Meta data is used in _on_item_activated to open the respective script
-
-
-func _on_diagnostics_finished() -> void:
-    refresh()
 
 
 func _on_item_activated() -> void:
@@ -155,13 +156,15 @@ func _on_item_activated() -> void:
         EditorInterface.set_main_screen_editor("Script")
 
 
-func _on_filter_toggled(_toggled_on: bool) -> void:
-    refresh()
-
-
 func _on_force_refresh() -> void:
     _provider.refresh_diagnostics()
 
+
+func _on_diagnostics_finished() -> void:
+    refresh()
+
+func _on_filter_toggled(_toggled_on: bool) -> void:
+    refresh()
 
 func _on_group_by_file_toggled(_toggled_on: bool) -> void:
     refresh()

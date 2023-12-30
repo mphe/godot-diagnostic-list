@@ -53,6 +53,7 @@ func refresh_diagnostics() -> void:
     if _num_outstanding > 0:
         for file in _script_paths:
             _client.update_diagnostics(file)
+        _client.enable_processing()
     else:
         _finish_update()
 
@@ -101,6 +102,7 @@ func _on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic]) -> v
     on_publish_diagnostics.emit(diagnostics)
 
     if _num_outstanding == 0:
+        _client.disable_processing()
         _finish_update()
 
 
@@ -108,7 +110,7 @@ func _gather_scripts(searchpath: String) -> Array[String]:
     var root := DirAccess.open(searchpath)
 
     if not root:
-        print("Failed to open directory: ", searchpath)
+        push_error("Failed to open directory: ", searchpath)
 
     var paths: Array[String] = []
 

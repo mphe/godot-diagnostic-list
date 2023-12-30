@@ -14,7 +14,7 @@ signal on_initialized
 signal on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic])
 
 
-const TICK_INTERVAL_SECONDS: float = 1.0
+const TICK_INTERVAL_SECONDS: float = 0.1
 
 
 @export var enable_debug_log: bool = false
@@ -22,6 +22,8 @@ const TICK_INTERVAL_SECONDS: float = 1.0
 var _jsonrpc := JSONRPC.new()
 var _client := StreamPeerTCP.new()
 var _id: int = 0
+var _should_tick_counter: int = 0
+var _timer: SceneTreeTimer
 
 
 func disconnect_lsp() -> void:
@@ -39,7 +41,22 @@ func connect_lsp() -> void:
     if err != OK:
         log_error("Failed to connect to LSP server: %s" % err)
 
-    _restart_timer()
+    # Enable processing until initialized
+    enable_processing()
+
+
+## Can be used to dynamically enable and disable the main loop, i.e. receiving and processing data.
+## Useful because the client has usually nothing to do when there are no diagnostics requested.
+## Each enable_processing() call should have a matching disable_processing() call as it uses
+## reference counting internally.
+func enable_processing() -> void:
+    _should_tick_counter += 1
+    _start_stop_tick_timer()
+
+
+func disable_processing() -> void:
+    _should_tick_counter -= 1
+    _start_stop_tick_timer()
 
 
 func update_diagnostics(file_path: String) -> void:
@@ -62,10 +79,21 @@ func update_diagnostics(file_path: String) -> void:
     })
 
 
+func _start_stop_tick_timer() -> void:
+    if _should_tick_counter > 0:
+        if not _timer:
+            _restart_timer()
+    else:
+        if _timer:
+            _timer.timeout.disconnect(_on_tick)
+            _timer.time_left = 0
+            _timer = null
+
+
 func _restart_timer() -> void:
     @warning_ignore("unsafe_method_access")
-    var timer: SceneTreeTimer = Engine.get_main_loop().create_timer(TICK_INTERVAL_SECONDS, true, false, true)
-    timer.timeout.connect(_on_tick)
+    _timer = Engine.get_main_loop().create_timer(TICK_INTERVAL_SECONDS, true, false, true)
+    _timer.timeout.connect(_on_tick)
 
 
 func _on_tick() -> void:
@@ -81,7 +109,9 @@ func _on_tick() -> void:
 
         _handle_response(json)
 
-    _restart_timer()
+    # While ticking, restart the tick timer endlessly
+    if _should_tick_counter > 0:
+        _restart_timer()
 
 
 ## Updates the current socket status and returns true when the main loop should continue.
@@ -175,6 +205,7 @@ func _handle_response(json: Dictionary) -> void:
     elif json.get("id") == 0:
         _send_notification("initialized", {})
         on_initialized.emit()
+        disable_processing()  # Done for now, no need for further processing.
 
 
 ## Parses the diagnostic information according to the LSP specification.

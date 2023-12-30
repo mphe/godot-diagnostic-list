@@ -78,31 +78,31 @@ hide_root = true
 select_mode = 1
 scroll_horizontal_enabled = false
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="HBoxContainer"]
 layout_mode = 2
 
-[node name="cb_auto_refresh" type="CheckBox" parent="HBoxContainer/VBoxContainer2"]
+[node name="cb_auto_refresh" type="CheckBox" parent="HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 text = "Auto-Refresh"
 
-[node name="btn_refresh_errors" type="Button" parent="HBoxContainer/VBoxContainer2"]
+[node name="btn_refresh_errors" type="Button" parent="HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 auto_translate = false
 disabled = true
 text = "Refresh"
 
-[node name="HSeparator" type="HSeparator" parent="HBoxContainer/VBoxContainer2"]
+[node name="HSeparator" type="HSeparator" parent="HBoxContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="cb_group_by_file" type="CheckBox" parent="HBoxContainer/VBoxContainer2"]
+[node name="cb_group_by_file" type="CheckBox" parent="HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Group by file"
 
-[node name="btn_filter_errors" type="Button" parent="HBoxContainer/VBoxContainer2"]
+[node name="btn_filter_errors" type="Button" parent="HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
@@ -112,7 +112,7 @@ button_pressed = true
 text = "0"
 icon = SubResource("ImageTexture_lld2p")
 
-[node name="btn_filter_warnings" type="Button" parent="HBoxContainer/VBoxContainer2"]
+[node name="btn_filter_warnings" type="Button" parent="HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 focus_mode = 0
@@ -122,7 +122,7 @@ button_pressed = true
 text = "0"
 icon = SubResource("ImageTexture_skkyw")
 
-[node name="btn_filter_infos" type="Button" parent="HBoxContainer/VBoxContainer2"]
+[node name="btn_filter_infos" type="Button" parent="HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -133,7 +133,7 @@ button_pressed = true
 text = "0"
 icon = SubResource("ImageTexture_vxfll")
 
-[node name="btn_filter_hints" type="Button" parent="HBoxContainer/VBoxContainer2"]
+[node name="btn_filter_hints" type="Button" parent="HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
@@ -143,3 +143,11 @@ toggle_mode = true
 button_pressed = true
 text = "0"
 icon = SubResource("ImageTexture_mdldb")
+
+[node name="label_refresh_time" type="Label" parent="HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+self_modulate = Color(1, 1, 1, 0.541176)
+layout_mode = 2
+size_flags_vertical = 10
+text = "0 ms"
+horizontal_alignment = 2

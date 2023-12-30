@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
 
-const panel_scene = preload("res://addons/diagnosticlist/panel.tscn")
+const panel_scene = preload("res://addons/diagnosticlist/Panel.tscn")
 
 var _dock: DiagnosticList_Panel
 var _client: DiagnosticList_LSPClient
