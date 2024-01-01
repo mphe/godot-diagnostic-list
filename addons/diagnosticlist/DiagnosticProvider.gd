@@ -49,17 +49,18 @@ func refresh_diagnostics(force: bool = false) -> bool:
 
     # Still waiting for results from the last call
     if _num_outstanding > 0:
+        _dirty = false
         return false
 
-    # Nothing changed -> nothing to do
+    # Nothing changed -> Nothing to do
     if not force and not _dirty:
         return false
 
-    print("Running diagnostic update")
-
     var files_modified := refresh_file_list()
 
+    # No files have actually been modified -> Nothing to do
     if not force and not files_modified:
+        _dirty = false
         return false
 
     _diagnostics.clear()
