@@ -80,7 +80,7 @@ func _plugin_ready() -> void:
     _error_list_tree.set_column_clip_content(0, true)
     _error_list_tree.set_column_clip_content(1, true)
     _error_list_tree.set_column_clip_content(2, false)
-    _error_list_tree.set_column_expand_ratio(0, 3)
+    _error_list_tree.set_column_expand_ratio(0, 4)
     _error_list_tree.item_activated.connect(_on_item_activated)
 
 
@@ -145,6 +145,7 @@ func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
     entry.set_text(0, diag.message)
     entry.set_icon(0, severity_setting.icon)
     entry.set_text(1, diag.get_filename())
+    entry.set_tooltip_text(1, diag.res_uri)
     # entry.set_text(2, "Line " + str(diag.line_start))
     entry.set_text(2, str(diag.line_start))
     entry.set_metadata(0, diag)  # Meta data is used in _on_item_activated to open the respective script
