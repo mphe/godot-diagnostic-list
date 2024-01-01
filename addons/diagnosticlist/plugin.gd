@@ -14,6 +14,7 @@ func _enter_tree() -> void:
     _client.connect_lsp()
 
     _dock = panel_scene.instantiate()
+    _dock.ready.connect(func() -> void: _dock._plugin_ready())
     add_control_to_bottom_panel(_dock, "Diagnostics")
 
 

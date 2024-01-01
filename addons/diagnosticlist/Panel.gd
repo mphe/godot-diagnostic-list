@@ -40,7 +40,9 @@ class DiagnosticSeveritySettings extends RefCounted:
 var _provider: DiagnosticList_DiagnosticProvider
 
 
-func _ready() -> void:
+## Alternative to _ready(). This will be called by plugin.gd to ensure the code in here only runs
+## when this script is loaded as part of the plugin and not while editing the scene.
+func _plugin_ready() -> void:
     _btn_refresh_errors.connect("pressed", _on_force_refresh)
     _btn_refresh_errors.disabled = true  # Disable button until connected to LSP
 
