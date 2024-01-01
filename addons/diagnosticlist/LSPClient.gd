@@ -1,9 +1,6 @@
 extends RefCounted
 class_name DiagnosticList_LSPClient
 
-# TODO: Consider caching script contents so only those scrips that actually changed need to be
-# reloaded from disk.
-
 ## Triggered when connected to the LS.
 signal on_connected
 
@@ -23,7 +20,18 @@ var _jsonrpc := JSONRPC.new()
 var _client := StreamPeerTCP.new()
 var _id: int = 0
 var _should_tick_counter: int = 0
-var _timer: SceneTreeTimer
+var _timer: Timer
+
+
+func _init(root: Node) -> void:
+    # NOTE: Since this is a RefCounted, it does not have access to the tree, hence plugin.gd passes
+    # the plugin root node.
+    _timer = Timer.new()
+    _timer.wait_time = TICK_INTERVAL_SECONDS
+    _timer.autostart = false
+    _timer.one_shot = false
+    _timer.timeout.connect(_on_tick)
+    root.add_child(_timer)
 
 
 func disconnect_lsp() -> void:
@@ -81,19 +89,9 @@ func update_diagnostics(file_path: String, content: String) -> void:
 
 func _start_stop_tick_timer() -> void:
     if _should_tick_counter > 0:
-        if not _timer:
-            _restart_timer()
+        _timer.start()
     else:
-        if _timer:
-            _timer.timeout.disconnect(_on_tick)
-            _timer.time_left = 0
-            _timer = null
-
-
-func _restart_timer() -> void:
-    @warning_ignore("unsafe_method_access")
-    _timer = Engine.get_main_loop().create_timer(TICK_INTERVAL_SECONDS, true, false, true)
-    _timer.timeout.connect(_on_tick)
+        _timer.stop()
 
 
 func _on_tick() -> void:
@@ -108,10 +106,6 @@ func _on_tick() -> void:
             log_debug("Received message:\n%s" % json)
 
         _handle_response(json)
-
-    # While ticking, restart the tick timer endlessly
-    if _should_tick_counter > 0:
-        _restart_timer()
 
 
 ## Updates the current socket status and returns true when the main loop should continue.

@@ -9,7 +9,7 @@ var _provider: DiagnosticList_DiagnosticProvider
 
 
 func _enter_tree() -> void:
-    _client = DiagnosticList_LSPClient.new()
+    _client = DiagnosticList_LSPClient.new(self)
     _client.connect("on_initialized", _on_lsp_initialized)
     _client.connect_lsp()
 
