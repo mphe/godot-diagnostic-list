@@ -55,6 +55,7 @@ func _ready() -> void:
     _filter_buttons[DiagnosticList_Diagnostic.Severity.Hint].hide()
 
     _cb_group_by_file.toggled.connect(_on_group_by_file_toggled)
+    _cb_auto_refresh.toggled.connect(_on_auto_refresh_toggled)
 
     _error_list_tree.columns = 3
     _error_list_tree.set_column_title(0, "Message")
@@ -81,11 +82,13 @@ func _ready() -> void:
     _error_list_tree.item_activated.connect(_on_item_activated)
 
 
+## Called by plugin.gd when the LSPClient is ready
 func start(provider: DiagnosticList_DiagnosticProvider) -> void:
     _provider = provider
     _provider.on_diagnostics_finished.connect(_on_diagnostics_finished)
     _btn_refresh_errors.disabled = false
     _on_force_refresh()
+    _start_stop_auto_refresh()
 
 
 func refresh() -> void:
@@ -98,7 +101,7 @@ func refresh() -> void:
         diagnostics.sort_custom(_sort_by_severity)
 
     # Show refresh time
-    _label_refresh_time.text = str(int(_provider.get_refresh_time_usec() / 1000.0)) + " ms"
+    _label_refresh_time.text = "Done - %s ms" % str(int(_provider.get_refresh_time_usec() / 1000.0))
 
     # Clear tree
     _error_list_tree.clear()
@@ -148,6 +151,18 @@ func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
 func _update_diagnostics(force: bool) -> void:
     if _provider.refresh_diagnostics(force):
         _label_refresh_time.text = "Updating..."
+    else:
+        _label_refresh_time.text = "Up to date"
+
+
+func _start_stop_auto_refresh() -> void:
+    if _cb_auto_refresh.button_pressed:
+        visibility_changed.connect(_on_auto_update)
+        _provider.on_diagnostics_available.connect(_on_auto_update)
+        _on_auto_update()  # Also trigger an update immediately
+    else:
+        visibility_changed.disconnect(_on_auto_update)
+        _provider.on_diagnostics_available.disconnect(_on_auto_update)
 
 
 func _on_item_activated() -> void:
@@ -163,6 +178,15 @@ func _on_item_activated() -> void:
 
 func _on_force_refresh() -> void:
     _update_diagnostics(true)
+
+
+func _on_auto_refresh_toggled(_toggled_on: bool) -> void:
+    _start_stop_auto_refresh()
+
+
+func _on_auto_update() -> void:
+    if is_visible_in_tree():
+        _update_diagnostics(false)
 
 
 func _on_diagnostics_finished() -> void:

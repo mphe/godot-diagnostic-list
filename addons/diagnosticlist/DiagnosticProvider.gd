@@ -7,6 +7,9 @@ signal on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic])
 ## Triggered when all outstanding diagnostics have been received.
 signal on_diagnostics_finished
 
+## Triggered when sources have changed and a diagnostic update is available.
+signal on_diagnostics_available
+
 
 class FileCache extends RefCounted:
     var content: String = ""
@@ -41,12 +44,8 @@ func _init(client: DiagnosticList_LSPClient) -> void:
 ## Returns true on success or false when there are no updates available or when another update is
 ## still in progress.
 func refresh_diagnostics(force: bool = false) -> bool:
-    # NOTE: On first thought, it sounds smart to only update diagnostics for files that actually
-    # changed (compare last modified timestamp).
-    # However, a change in one file can cause errors in other files, e.g. renaming an identifier.
-    # Hence, we always have to do a full update.
-    # Theoretically, if there was a dependency graph of scripts, we could only update relevant
-    # scripts, but this is beyond the scope of this plugin.
+    # NOTE: We always have to do a full update, because a change in one file can cause errors in
+    # other files, e.g. renaming an identifier.
 
     # Still waiting for results from the last call
     if _num_outstanding > 0:
@@ -69,36 +68,15 @@ func refresh_diagnostics(force: bool = false) -> bool:
     _refresh_time = Time.get_ticks_usec()
 
     if _num_outstanding > 0:
-        # var file_time := Time.get_ticks_usec()
         for file in _script_paths:
             _client.update_diagnostics(file, _file_cache[file].content)
-            # _client.update_diagnostics(file, FileAccess.get_file_as_string(file))
-            # _client.update_diagnostics(file, (load(file) as GDScript).source_code)
         _client.enable_processing()
-        # file_time = Time.get_ticks_usec() - file_time
-        # print("file time: ", file_time / 1000.0, " ms")
     else:
         _finish_update()
 
     # If everything was succesful, reset dirty flag
     _dirty = false
     return true
-
-
-func _finish_update() -> void:
-    # NOTE: When parsing scripts using LSP, the script_classes_updated signal will be fired multiple
-    # times by the engine without any actual changes.
-    # Hence, to prevent false positive dirty flags, reset _dirty back to false when the diagnsotic
-    # update is finished.
-    # FIXME: It might happen that the user makes a change while diagnostics are still refreshing,
-    # In this case, the dirty flag would still be resetted, even though it shouldn't.
-    # This is essentially a tradeoff between efficiency and accuracy.
-    # As I find this exact scenario unlikely to occur regularily, I prefer the more efficient
-    # implementation of updating less often.
-    _dirty = false
-
-    _refresh_time = Time.get_ticks_usec() - _refresh_time
-    on_diagnostics_finished.emit()
 
 
 ## Rescan the project for script files
@@ -134,10 +112,6 @@ func refresh_file_list() -> bool:
     return modified
 
 
-func _on_script_resource_changed(path: String) -> void:
-    print(path, " changed")
-
-
 ## Get the amount of diagnostics of a given severity.
 func get_diagnostic_count(severity: DiagnosticList_Diagnostic.Severity) -> int:
     return _counts[severity]
@@ -154,8 +128,34 @@ func get_refresh_time_usec() -> int:
     return _refresh_time
 
 
+func are_diagnostics_available() -> bool:
+    return _dirty
+
+
+func _finish_update() -> void:
+    # NOTE: When parsing scripts using LSP, the script_classes_updated signal will be fired multiple
+    # times by the engine without any actual changes.
+    # Hence, to prevent false positive dirty flags, reset _dirty back to false when the diagnsotic
+    # update is finished.
+    # FIXME: It might happen that the user makes a change while diagnostics are still refreshing,
+    # In this case, the dirty flag would still be resetted, even though it shouldn't.
+    # This is essentially a tradeoff between efficiency and accuracy.
+    # As I find this exact scenario unlikely to occur regularily, I prefer the more efficient
+    # implementation of updating less often.
+    _dirty = false
+
+    _refresh_time = Time.get_ticks_usec() - _refresh_time
+    on_diagnostics_finished.emit()
+
+
+func _mark_dirty() -> void:
+    if not _dirty:
+        _dirty = true
+        on_diagnostics_available.emit()
+
+
 func _on_sources_changed(_exist: bool) -> void:
-    _dirty = true
+    _mark_dirty()
 
 
 func _on_script_classes_updated() -> void:
@@ -174,7 +174,7 @@ func _on_script_classes_updated() -> void:
     # When using the internal editor, script_classes_updated will only be fired upon saving.
     # Hence, when the signal arrives and the Godot window has focus, an update should be performed.
     if EditorInterface.get_base_control().get_window().has_focus():
-        _dirty = true
+        _mark_dirty()
 
 
 func _on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic]) -> void:

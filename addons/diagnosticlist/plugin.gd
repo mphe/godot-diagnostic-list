@@ -9,12 +9,6 @@ var _provider: DiagnosticList_DiagnosticProvider
 
 
 func _enter_tree() -> void:
-    # var fs := EditorInterface.get_resource_filesystem()
-    # fs.resources_reimported.connect(func(res): print("reimport: ", res))
-    # fs.resources_reload.connect(func(res): print("reload: ", res))
-    # fs.script_classes_updated.connect(func(): print("script classes update"))
-    # fs.sources_changed.connect(func(exist): print("sources changed"))
-
     _client = DiagnosticList_LSPClient.new()
     _client.connect("on_initialized", _on_lsp_initialized)
     _client.connect_lsp()
