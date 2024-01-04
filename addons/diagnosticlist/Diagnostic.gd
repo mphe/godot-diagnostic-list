@@ -9,6 +9,12 @@ enum Severity {
     Hint,
 }
 
+
+class Pack extends RefCounted:
+    var res_uri: StringName
+    var diagnostics: Array[DiagnosticList_Diagnostic]
+
+
 ## Represents the file path as res:// path
 @export var res_uri: StringName
 @export var line_start: int  # zero-based

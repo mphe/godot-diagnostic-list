@@ -2,7 +2,7 @@ extends RefCounted
 class_name DiagnosticList_DiagnosticProvider
 
 ## Triggered when new diagnostics for a file arrived.
-signal on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic])
+signal on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack)
 
 ## Triggered when all outstanding diagnostics have been received.
 signal on_diagnostics_finished
@@ -177,12 +177,17 @@ func _on_script_classes_updated() -> void:
         _mark_dirty()
 
 
-func _on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic]) -> void:
-    _diagnostics.append_array(diagnostics)
+func _on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack) -> void:
+    # Ignore unexpected diagnostic updates
+    if _num_outstanding == 0:
+        _client.log_error("Received diagnostics without having them requested before")
+        return
+
+    _diagnostics.append_array(diagnostics.diagnostics)
     _num_outstanding -= 1
 
     # Increase new diagnostic counts
-    for diag in diagnostics:
+    for diag in diagnostics.diagnostics:
         _counts[diag.severity] += 1
 
     on_publish_diagnostics.emit(diagnostics)

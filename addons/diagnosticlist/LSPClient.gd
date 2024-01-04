@@ -8,7 +8,7 @@ signal on_connected
 signal on_initialized
 
 ## Triggered when new diagnostics for a file arrived.
-signal on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic])
+signal on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack)
 
 
 const TICK_INTERVAL_SECONDS_MIN: float = 0.05
@@ -196,26 +196,22 @@ func _handle_response(json: Dictionary) -> void:
 
 ## Parses the diagnostic information according to the LSP specification.
 ## https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
-func _parse_diagnostics(params: Dictionary) -> Array[DiagnosticList_Diagnostic]:
-    var result: Array[DiagnosticList_Diagnostic] = []
+func _parse_diagnostics(params: Dictionary) -> DiagnosticList_Diagnostic.Pack:
+    var result := DiagnosticList_Diagnostic.Pack.new()
+    result.res_uri = StringName(ProjectSettings.localize_path(str(params["uri"]).replace("file://", "")))
 
     var diagnostics: Array[Dictionary] = []
     diagnostics.assign(params["diagnostics"])
 
-    if diagnostics.is_empty():
-        return result
-
-    var res_uri := StringName(ProjectSettings.localize_path(str(params["uri"]).replace("file://", "")))
-
     for diag in diagnostics:
         var range_start: Dictionary = diag["range"]["start"]
         var entry := DiagnosticList_Diagnostic.new()
-        entry.res_uri = res_uri
+        entry.res_uri = result.res_uri
         entry.message = diag["message"]
         entry.severity = (int(diag["severity"]) - 1) as DiagnosticList_Diagnostic.Severity  # One-based in LSP, hence convert to the zero-based enum value
         entry.line_start = int(range_start["line"])
         entry.column_start = int(range_start["character"])
-        result.append(entry)
+        result.diagnostics.append(entry)
 
     return result
 
