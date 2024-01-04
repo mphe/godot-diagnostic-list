@@ -43,7 +43,7 @@ var _provider: DiagnosticList_DiagnosticProvider
 ## Alternative to _ready(). This will be called by plugin.gd to ensure the code in here only runs
 ## when this script is loaded as part of the plugin and not while editing the scene.
 func _plugin_ready() -> void:
-    _btn_refresh_errors.connect("pressed", _on_force_refresh)
+    _btn_refresh_errors.pressed.connect(_on_force_refresh)
     _btn_refresh_errors.disabled = true  # Disable button until connected to LSP
 
     for i in len(_filter_buttons):
@@ -89,7 +89,6 @@ func start(provider: DiagnosticList_DiagnosticProvider) -> void:
     _provider = provider
     _provider.on_diagnostics_finished.connect(_on_diagnostics_finished)
     _btn_refresh_errors.disabled = false
-    _on_force_refresh()
     _start_stop_auto_refresh()
 
 
