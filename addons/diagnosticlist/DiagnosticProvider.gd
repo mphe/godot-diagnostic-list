@@ -49,7 +49,7 @@ func refresh_diagnostics(force: bool = false) -> bool:
 
     # Still waiting for results from the last call
     if _num_outstanding > 0:
-        _dirty = false
+        _dirty = false  # Dirty will be reset anyway after update has been finished
         return false
 
     # Nothing changed -> Nothing to do
@@ -82,7 +82,10 @@ func refresh_diagnostics(force: bool = false) -> bool:
 ## Rescan the project for script files
 ## Returns true when there have been changes, otherwise false.
 func refresh_file_list() -> bool:
-    _script_paths = _gather_scripts("res://")
+    if ProjectSettings.get("debug/gdscript/warnings/exclude_addons"):
+        _script_paths = _gather_scripts("res://", [ "res://addons" ])
+    else:
+        _script_paths = _gather_scripts("res://", [])
 
     var modified: bool = false
 
@@ -94,6 +97,7 @@ func refresh_file_list() -> bool:
         if not cache:
             cache = FileCache.new()
             _file_cache[path] = cache
+            # The next condition will also inevitably be true
 
         if cache.last_modified != last_modified:
             cache.last_modified = last_modified
@@ -167,9 +171,8 @@ func _on_script_classes_updated() -> void:
     #
     # However, whenever the Godot window receives focus, a sources_changed signal is fired.
     #
-    # Hence, to prevent unnecessary amounts of updates when using external editors,
-    # check whether the Godot window has focus and if it doesn't, ignore the signal, as the user is
-    # likely typing in an external editor.
+    # Hence, to prevent unnecessary amounts of updates, check whether the Godot window has focus and
+    # if it doesn't, ignore the signal, as the user is likely typing in an external editor.
     #
     # When using the internal editor, script_classes_updated will only be fired upon saving.
     # Hence, when the signal arrives and the Godot window has focus, an update should be performed.
@@ -196,7 +199,8 @@ func _on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack) -> voi
         _finish_update()
 
 
-func _gather_scripts(searchpath: String) -> Array[String]:
+# TODO: Consider making ignore_dirs a set if there will ever be more than one entry
+func _gather_scripts(searchpath: String, ignore_dirs: Array[String]) -> Array[String]:
     var root := DirAccess.open(searchpath)
 
     if not root:
@@ -218,7 +222,8 @@ func _gather_scripts(searchpath: String) -> Array[String]:
         var path := root_path.path_join(fname)
 
         if root.current_is_dir():
-            paths.append_array(_gather_scripts(path))
+            if not ignore_dirs.has(path):
+                paths.append_array(_gather_scripts(path, ignore_dirs))
         elif fname.ends_with(".gd"):
             paths.append(path)
 
