@@ -71,7 +71,6 @@ func refresh_diagnostics(force: bool = false) -> bool:
     if _num_outstanding > 0:
         for file in _script_paths:
             _client.update_diagnostics(file, _file_cache[file].content)
-        _client.enable_processing()
     else:
         _finish_update()
 
@@ -189,7 +188,6 @@ func _on_publish_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic]) -> v
     on_publish_diagnostics.emit(diagnostics)
 
     if _num_outstanding == 0:
-        _client.disable_processing()
         _finish_update()
 
 
