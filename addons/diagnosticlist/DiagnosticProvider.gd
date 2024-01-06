@@ -81,8 +81,8 @@ func refresh_diagnostics(force: bool = false) -> bool:
     else:
         _finish_update()
 
-    # If everything was succesful, reset dirty flag
-    _dirty = false
+    # NOTE: Do not reset _dirty here, because it will be resetted anyway in _finish_update() after
+    # all diagnostics have been received.
     return true
 
 
@@ -161,6 +161,11 @@ func _finish_update() -> void:
 
 func _mark_dirty() -> void:
     if not _dirty:
+        # If an update is currently in progress, don't do anything. _dirty will be reset anyway in
+        # _finish_update().
+        if _num_outstanding > 0:
+            return
+
         _dirty = true
         on_diagnostics_available.emit()
 
