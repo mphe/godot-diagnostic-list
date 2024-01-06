@@ -11,11 +11,10 @@ signal on_initialized
 signal on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack)
 
 
+const ENABLE_DEBUG_LOG: bool = false
 const TICK_INTERVAL_SECONDS_MIN: float = 0.05
 const TICK_INTERVAL_SECONDS_MAX: float = 30.0
 
-
-@export var enable_debug_log: bool = false
 
 var _jsonrpc := JSONRPC.new()
 var _client := StreamPeerTCP.new()
@@ -51,6 +50,7 @@ func connect_lsp() -> void:
         log_error("Failed to connect to LSP server: %s" % err)
 
     # Enable processing
+    _id = 0
     _timer.start()
     _reset_tick_interval()
 
@@ -252,7 +252,7 @@ func _initialize() -> void:
 
 
 func log_debug(text: String) -> void:
-    if enable_debug_log:
+    if ENABLE_DEBUG_LOG:
         print("[DiagnosticList] ", text)
 
 func log_error(text: String) -> void:
