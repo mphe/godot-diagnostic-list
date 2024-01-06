@@ -196,7 +196,8 @@ func _on_force_refresh() -> void:
     _update_diagnostics(true)
 
 
-func _on_auto_refresh_toggled(_toggled_on: bool) -> void:
+func _on_auto_refresh_toggled(toggled_on: bool) -> void:
+    DiagnosticList_Settings.set_auto_refresh(toggled_on)
     _start_stop_auto_refresh()
 
 
