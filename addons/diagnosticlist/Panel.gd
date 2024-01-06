@@ -43,21 +43,16 @@ var _provider: DiagnosticList_DiagnosticProvider
 ## Alternative to _ready(). This will be called by plugin.gd to ensure the code in here only runs
 ## when this script is loaded as part of the plugin and not while editing the scene.
 func _plugin_ready() -> void:
-    _btn_refresh_errors.pressed.connect(_on_force_refresh)
-    _btn_refresh_errors.disabled = true  # Disable button until connected to LSP
-
     for i in len(_filter_buttons):
         var btn: Button = _filter_buttons[i]
         var severity := _severity_settings[i]
         btn.icon = severity.icon
-        btn.toggled.connect(_on_filter_toggled)
 
     # These kinds of severities do not exist yet in Godot LSP, so hide them for now.
     _filter_buttons[DiagnosticList_Diagnostic.Severity.Info].hide()
     _filter_buttons[DiagnosticList_Diagnostic.Severity.Hint].hide()
 
-    _cb_group_by_file.toggled.connect(_on_group_by_file_toggled)
-    _cb_auto_refresh.toggled.connect(_on_auto_refresh_toggled)
+    _cb_auto_refresh.button_pressed = DiagnosticList_Settings.get_auto_refresh()
 
     _error_list_tree.columns = 3
     _error_list_tree.set_column_title(0, "Message")
@@ -81,14 +76,23 @@ func _plugin_ready() -> void:
     _error_list_tree.set_column_clip_content(1, true)
     _error_list_tree.set_column_clip_content(2, false)
     _error_list_tree.set_column_expand_ratio(0, 4)
-    _error_list_tree.item_activated.connect(_on_item_activated)
 
 
 ## Called by plugin.gd when the LSPClient is ready
 func start(provider: DiagnosticList_DiagnosticProvider) -> void:
     _provider = provider
+
+    # Now that it is safe to do stuff, connect all the signals
     _provider.on_diagnostics_finished.connect(_on_diagnostics_finished)
     _provider.on_update_progress.connect(_on_update_progress)
+
+    _btn_refresh_errors.pressed.connect(_on_force_refresh)
+    _cb_group_by_file.toggled.connect(_on_group_by_file_toggled)
+    _cb_auto_refresh.toggled.connect(_on_auto_refresh_toggled)
+    _error_list_tree.item_activated.connect(_on_item_activated)
+
+    for btn in _filter_buttons:
+        btn.toggled.connect(_on_filter_toggled)
 
     # Start checking
     _set_status_string("", false)
