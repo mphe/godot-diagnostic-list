@@ -10,6 +10,9 @@ signal on_diagnostics_finished
 ## Triggered when sources have changed and a diagnostic update is available.
 signal on_diagnostics_available
 
+## Triggered at the same time as on_publish_diagnostics but provides status information
+signal on_update_progress(num_remaining: int, num_all: int)
+
 
 class FileCache extends RefCounted:
     var content: String = ""
@@ -38,6 +41,10 @@ func _init(client: DiagnosticList_LSPClient) -> void:
 
     # Triggered when the Godot window receives focus and when moving or deleting files
     fs.sources_changed.connect(_on_sources_changed)
+
+
+func is_updating() -> bool:
+    return _num_outstanding > 0
 
 
 ## Refresh diagnostics for all scripts.
@@ -194,6 +201,7 @@ func _on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack) -> voi
         _counts[diag.severity] += 1
 
     on_publish_diagnostics.emit(diagnostics)
+    on_update_progress.emit(_num_outstanding, len(_script_paths))
 
     if _num_outstanding == 0:
         _finish_update()

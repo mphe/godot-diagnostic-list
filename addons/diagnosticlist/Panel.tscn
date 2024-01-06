@@ -96,5 +96,6 @@ unique_name_in_owner = true
 self_modulate = Color(1, 1, 1, 0.541176)
 layout_mode = 2
 size_flags_vertical = 10
-text = "0 ms"
+text = "Connecting..."
 horizontal_alignment = 2
+autowrap_mode = 2

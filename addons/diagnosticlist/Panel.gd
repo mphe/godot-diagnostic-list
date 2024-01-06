@@ -88,7 +88,10 @@ func _plugin_ready() -> void:
 func start(provider: DiagnosticList_DiagnosticProvider) -> void:
     _provider = provider
     _provider.on_diagnostics_finished.connect(_on_diagnostics_finished)
-    _btn_refresh_errors.disabled = false
+    _provider.on_update_progress.connect(_on_update_progress)
+
+    # Start checking
+    _set_status_string("", false)
     _start_stop_auto_refresh()
 
 
@@ -102,7 +105,7 @@ func refresh() -> void:
         diagnostics.sort_custom(_sort_by_severity)
 
     # Show refresh time
-    _label_refresh_time.text = "Done - %s ms" % str(int(_provider.get_refresh_time_usec() / 1000.0))
+    _set_status_string("Up-to-date", true)
 
     # Clear tree
     _error_list_tree.clear()
@@ -131,6 +134,13 @@ func refresh() -> void:
         _filter_buttons[i].text = str(_provider.get_diagnostic_count(i))
 
 
+func _set_status_string(text: String, with_last_time: bool) -> void:
+    if with_last_time:
+        _label_refresh_time.text = "%s\n%.2f s" % [ text, _provider.get_refresh_time_usec() / 1000000.0 ]
+    else:
+        _label_refresh_time.text = text
+
+
 func _sort_by_severity(a: DiagnosticList_Diagnostic, b: DiagnosticList_Diagnostic) -> bool:
     if a.severity == b.severity:
         return a.res_uri < b.res_uri
@@ -151,10 +161,10 @@ func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
 
 
 func _update_diagnostics(force: bool) -> void:
-    if _provider.refresh_diagnostics(force):
-        _label_refresh_time.text = "Updating..."
+    if _provider.is_updating() or _provider.refresh_diagnostics(force):
+        _set_status_string("Updating...", false)
     else:
-        _label_refresh_time.text = "Up to date"
+        _set_status_string("Up-to-date", true)
 
 
 func _start_stop_auto_refresh() -> void:
@@ -189,6 +199,10 @@ func _on_auto_refresh_toggled(_toggled_on: bool) -> void:
 func _on_auto_update() -> void:
     if is_visible_in_tree():
         _update_diagnostics(false)
+
+
+func _on_update_progress(num_remaining: int, num_all: int) -> void:
+    _set_status_string("Updating...\n(%d/%d)" % [ num_all - num_remaining, num_all ], false)
 
 
 func _on_diagnostics_finished() -> void:
