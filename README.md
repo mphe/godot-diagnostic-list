@@ -33,3 +33,9 @@ On the right side of the diagnostic panel are various controls:
 
 Directories with a `.gdignore` file are ignored.
 If the `debug/gdscript/warnings/exclude_addons` project setting is enabled, it will also ignore files in `addons/`.
+
+
+# Showcase
+
+https://github.com/mphe/godot-diagnostic-list/assets/7116001/4c8c9784-94cc-4079-b929-8e2a076424e5
+
