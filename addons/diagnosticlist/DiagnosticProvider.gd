@@ -79,7 +79,7 @@ func refresh_diagnostics(force: bool = false) -> bool:
         for file in _script_paths:
             _client.update_diagnostics(file, _file_cache[file].content)
     else:
-        _finish_update()
+        call_deferred("_finish_update")
 
     # NOTE: Do not reset _dirty here, because it will be resetted anyway in _finish_update() after
     # all diagnostics have been received.
