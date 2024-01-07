@@ -11,9 +11,10 @@ Compatible with Godot 4.2+.
 
 ## Installation
 
-1. Download or clone this repository and copy the `addons/` directory to your project.
-2. Enable the plugin in the project settings
-3. (Possibly) Restart Godot
+1. Download the plugin from this repository or from the [Asset Library](https://godotengine.org/asset-library/asset/2482)
+2. Copy the `addons/` directory to your project
+3. Enable the plugin in the project settings
+4. (Possibly) Restart Godot
 
 ## Usage
 
