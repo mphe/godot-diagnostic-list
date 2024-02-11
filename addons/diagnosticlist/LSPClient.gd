@@ -56,7 +56,10 @@ func connect_lsp() -> void:
 
 
 func update_diagnostics(file_path: String, content: String) -> void:
-    var uri := "file://" + ProjectSettings.globalize_path(file_path).simplify_path()
+    # Godot LS expects a leading "/" in URIs.
+    # On Windows, where absolute paths start with C:, it must be added manually.
+    var prefix := "file:///" if OS.get_name() == "Windows" else "file://"
+    var uri := prefix + ProjectSettings.globalize_path(file_path).simplify_path()
 
     _send_notification("textDocument/didOpen", {
         "textDocument": {
