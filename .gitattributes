@@ -1,0 +1,7 @@
+# Only include the addons/diagnosticlist folder when downloading from the Asset Library.
+/**        export-ignore
+/addons    !export-ignore
+/addons/diagnosticlist	!export-ignore
+/addons/diagnosticlist/** !export-ignore
+/README.md !export-ignore
+/LICENSE !export-ignore
