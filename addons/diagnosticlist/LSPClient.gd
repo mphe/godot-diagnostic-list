@@ -15,6 +15,9 @@ const ENABLE_DEBUG_LOG: bool = false
 const TICK_INTERVAL_SECONDS_MIN: float = 0.05
 const TICK_INTERVAL_SECONDS_MAX: float = 30.0
 
+# Godot LS expects a leading "/" in URIs.
+# On Windows, where absolute paths start with C:, it must be added manually.
+var URI_PREFIX := "file:///" if OS.get_name() == "Windows" else "file://"
 
 var _jsonrpc := JSONRPC.new()
 var _client := StreamPeerTCP.new()
@@ -56,10 +59,7 @@ func connect_lsp() -> void:
 
 
 func update_diagnostics(file_path: String, content: String) -> void:
-    # Godot LS expects a leading "/" in URIs.
-    # On Windows, where absolute paths start with C:, it must be added manually.
-    var prefix := "file:///" if OS.get_name() == "Windows" else "file://"
-    var uri := prefix + ProjectSettings.globalize_path(file_path).simplify_path()
+    var uri := _res_path_to_lsp_uri(file_path)
 
     _send_notification("textDocument/didOpen", {
         "textDocument": {
@@ -201,7 +201,7 @@ func _handle_response(json: Dictionary) -> void:
 ## https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams
 func _parse_diagnostics(params: Dictionary) -> DiagnosticList_Diagnostic.Pack:
     var result := DiagnosticList_Diagnostic.Pack.new()
-    result.res_uri = StringName(ProjectSettings.localize_path(str(params["uri"]).replace("file://", "")))
+    result.res_uri = StringName(_lsp_uri_to_res_path(str(params["uri"])))
 
     var diagnostics: Array[Dictionary] = []
     diagnostics.assign(params["diagnostics"])
@@ -245,13 +245,21 @@ func _initialize() -> void:
     _send_request("initialize", {
         "processId": null,
         "rootPath": root_path,
-        "rootUri": "file://" + root_path,
+        "rootUri": URI_PREFIX + root_path,
         "capabilities": {
             "textDocument": {
                 "publishDiagnostics": {},
             },
         },
     })
+
+
+func _res_path_to_lsp_uri(res_path: String) -> String:
+    return URI_PREFIX + ProjectSettings.globalize_path(res_path).simplify_path()
+
+
+func _lsp_uri_to_res_path(lsp_uri: String) -> String:
+    return ProjectSettings.localize_path(lsp_uri.replace(URI_PREFIX, ""))
 
 
 func log_debug(text: String) -> void:
