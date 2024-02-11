@@ -18,6 +18,8 @@ Compatible with Godot 4.2+.
 
 ## Usage
 
+**NOTE**: It is not possible to run multiple Godot instances with this addon. See also [Known Issues](#known-issues).
+
 The diagnostic panel appears in the bottom dock.
 
 Double-clicking an entry opens the editor and jumps to the respective location in the script.
@@ -34,6 +36,16 @@ On the right side of the diagnostic panel are various controls:
 
 Directories with a `.gdignore` file are ignored.
 If the `debug/gdscript/warnings/exclude_addons` project setting is enabled, it will also ignore files in `addons/`.
+
+
+# Known Issues
+
+## Does not work correctly with multiple Godot instances
+
+  This addon relies on the language server protocol to retrieve diagnostics from Godot.
+  Godot starts a language server on the port defined in the editor settings under `network/language_server/remote_port`.
+  If the port is already in use, e.g. by the LS of another Godot instance, Godot is unable to start a new LS.
+  Hence, this plugin is unable to connect to the correct Godot instance and report correct diagnostics in such cases.
 
 
 # Showcase
