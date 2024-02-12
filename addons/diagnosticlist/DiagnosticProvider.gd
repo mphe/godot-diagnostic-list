@@ -143,6 +143,10 @@ func are_diagnostics_available() -> bool:
     return _dirty
 
 
+func get_lsp_client() -> DiagnosticList_LSPClient:
+    return _client
+
+
 func _finish_update() -> void:
     # NOTE: When parsing scripts using LSP, the script_classes_updated signal will be fired multiple
     # times by the engine without any actual changes.

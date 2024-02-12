@@ -100,3 +100,13 @@ size_flags_vertical = 10
 text = "Connecting..."
 horizontal_alignment = 2
 autowrap_mode = 2
+
+[node name="multiple_instances_alert" type="AcceptDialog" parent="."]
+unique_name_in_owner = true
+title = "Diagnostic List - Warning!"
+position = Vector2i(0, 36)
+size = Vector2i(640, 158)
+dialog_text = "There seems to be another Godot instance running.
+
+The Diagnostic List plugin does not work correctly with multiple Godot instances.
+It will only be able to connect to the first instance, causing incorrect diagnostics."

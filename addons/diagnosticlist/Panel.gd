@@ -18,6 +18,7 @@ class DiagnosticSeveritySettings extends RefCounted:
 @onready var _cb_auto_refresh: CheckBox = %"cb_auto_refresh"
 @onready var _cb_group_by_file: CheckBox = %"cb_group_by_file"
 @onready var _label_refresh_time: Label = %"label_refresh_time"
+@onready var _multiple_instances_alert: AcceptDialog = %"multiple_instances_alert"
 
 # This array will be filled according to each severity type to allow direct indexing
 @onready var _filter_buttons: Array[Button] = [
@@ -77,6 +78,10 @@ func _plugin_ready() -> void:
     _error_list_tree.set_column_clip_content(2, false)
     _error_list_tree.set_column_expand_ratio(0, 4)
 
+    _multiple_instances_alert.add_button("More Information", true, "https://github.com/mphe/godot-diagnostic-list#does-not-work-correctly-with-multiple-godot-instances")
+    _multiple_instances_alert.custom_action.connect(func(action: StringName) -> void: OS.shell_open(action))
+    _multiple_instances_alert.visible = false
+
 
 ## Called by plugin.gd when the LSPClient is ready
 func start(provider: DiagnosticList_DiagnosticProvider) -> void:
@@ -97,6 +102,10 @@ func start(provider: DiagnosticList_DiagnosticProvider) -> void:
     # Start checking
     _set_status_string("", false)
     _start_stop_auto_refresh()
+
+    # If connected to a LS of a different Godot instance, show a warning
+    if provider.get_lsp_client().get_project_path() != ProjectSettings.globalize_path("res://").simplify_path():
+        _multiple_instances_alert.popup_centered()
 
 
 func refresh() -> void:

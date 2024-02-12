@@ -23,6 +23,7 @@ var _jsonrpc := JSONRPC.new()
 var _client := StreamPeerTCP.new()
 var _id: int = 0
 var _timer: Timer
+var _lsp_project_path: String = ""  # Absolute project path reported by LS
 
 
 func _init(root: Node) -> void:
@@ -76,6 +77,11 @@ func update_diagnostics(file_path: String, content: String) -> void:
             "uri": uri
         }
     })
+
+
+## Returns the absolute project path as reported by the LS.
+func get_project_path() -> String:
+    return _lsp_project_path
 
 
 func _reset_tick_interval() -> void:
@@ -191,6 +197,9 @@ func _handle_response(json: Dictionary) -> void:
     # Diagnostics received
     if json.get("method") == "textDocument/publishDiagnostics":
         on_publish_diagnostics.emit(_parse_diagnostics(json["params"]))
+    # Project path
+    elif json.get("method") == "gdscript_client/changeWorkspace":
+        _lsp_project_path = str(json["params"]["path"]).simplify_path()
     # Initialization response
     elif json.get("id") == 0:
         _send_notification("initialized", {})
@@ -240,12 +249,8 @@ func _send(json: Dictionary) -> void:
 
 
 func _initialize() -> void:
-    var root_path := ProjectSettings.globalize_path("res://")
-
     _send_request("initialize", {
         "processId": null,
-        "rootPath": root_path,
-        "rootUri": URI_PREFIX + root_path,
         "capabilities": {
             "textDocument": {
                 "publishDiagnostics": {},
