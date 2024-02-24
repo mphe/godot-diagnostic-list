@@ -241,9 +241,9 @@ func _send_notification(method: String, params: Dictionary) -> void:
 func _send(json: Dictionary) -> void:
     var content := JSON.stringify(json, "", false)
     var content_bytes := content.to_utf8_buffer()
-    var header := "Content-Length: %s\r\n\r\n" % len(content)
+    var header := "Content-Length: %s\r\n\r\n" % len(content_bytes)
     var header_bytes := header.to_ascii_buffer()
-    log_debug("Sending message (length: %s): %s" % [ len(content), content ])
+    log_debug("Sending message (length: %s): %s" % [ len(content_bytes), content ])
     _client.put_data(header_bytes + content_bytes)
     _reset_tick_interval()  # Reset the timer interval because we are expecting a response
 
