@@ -10,6 +10,9 @@ signal on_initialized
 ## Triggered when new diagnostics for a file arrived.
 signal on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack)
 
+## Triggered when the LSP server returns an unexpected JSON-RPC error
+signal on_jsonrpc_error(error: Dictionary)
+
 
 const ENABLE_DEBUG_LOG: bool = false
 const TICK_INTERVAL_SECONDS_MIN: float = 0.05
@@ -194,16 +197,31 @@ func _read_header() -> String:
 
 
 func _handle_response(json: Dictionary) -> void:
-    # Diagnostics received
-    if json.get("method") == "textDocument/publishDiagnostics":
-        on_publish_diagnostics.emit(_parse_diagnostics(json["params"]))
-    # Project path
-    elif json.get("method") == "gdscript_client/changeWorkspace":
-        _lsp_project_path = str(json["params"]["path"]).simplify_path()
+    var method: String = json.get("method", "")
+
+    match method:
+        # Diagnostics received
+        "textDocument/publishDiagnostics":
+            on_publish_diagnostics.emit(_parse_diagnostics(json["params"]))
+            return
+
+        # Project path
+        "gdscript_client/changeWorkspace":
+            _lsp_project_path = str(json["params"]["path"]).simplify_path()
+            return
+
     # Initialization response
-    elif json.get("id") == 0:
+    if json.get("id") == 0:
         _send_notification("initialized", {})
         on_initialized.emit()
+        return
+
+    # JSON-RPC error
+    if json.has("error"):
+        var error: Dictionary = json["error"]
+        log_error("JSON-RPC Error: %s" % error)
+        log_error("This is likely a bug in the plugin. Consider submitting a bug report on GitHub.")
+        on_jsonrpc_error.emit(error)
 
 
 ## Parses the diagnostic information according to the LSP specification.

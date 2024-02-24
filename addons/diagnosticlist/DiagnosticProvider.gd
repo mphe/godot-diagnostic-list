@@ -32,6 +32,7 @@ var _file_cache := {}  # Dict[String, FileCache]
 func _init(client: DiagnosticList_LSPClient) -> void:
     _client = client
     _client.on_publish_diagnostics.connect(_on_publish_diagnostics)
+    _client.on_jsonrpc_error.connect(_on_jsonrpc_error)
 
     var fs := EditorInterface.get_resource_filesystem()
 
@@ -203,13 +204,26 @@ func _on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack) -> voi
         return
 
     _diagnostics.append_array(diagnostics.diagnostics)
-    _num_outstanding -= 1
 
     # Increase new diagnostic counts
     for diag in diagnostics.diagnostics:
         _counts[diag.severity] += 1
 
     on_publish_diagnostics.emit(diagnostics)
+
+    _update_outstanding_counter()
+
+
+func _on_jsonrpc_error(_error: Dictionary) -> void:
+    # In case of error, it is likely something failed for a specific file.
+    # To prevent the plugin from effectively freezing by waiting forever for results that will never
+    # arrive, just update the counter as if diagnostics arrived.
+    if _num_outstanding > 0:
+        _update_outstanding_counter()
+
+
+func _update_outstanding_counter() -> void:
+    _num_outstanding -= 1
     on_update_progress.emit(_num_outstanding, len(_script_paths))
 
     if _num_outstanding == 0:
