@@ -169,7 +169,7 @@ func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
     entry.set_text(1, diag.get_filename())
     entry.set_tooltip_text(1, diag.res_uri)
     # entry.set_text(2, "Line " + str(diag.line_start))
-    entry.set_text(2, str(diag.line_start))
+    entry.set_text(2, str(diag.line_start + 1))
     entry.set_metadata(0, diag)  # Meta data is used in _on_item_activated to open the respective script
 
 
