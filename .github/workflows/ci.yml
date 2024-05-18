@@ -1,0 +1,25 @@
+name: ⚙️ CI
+on:
+  push:
+    # branches: [ master ]
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
+      - "**/*.png"
+      - "**/*.svg"
+
+  pull_request:
+    # branches: [ master ]
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
+      - "**/*.png"
+      - "**/*.svg"
+
+jobs:
+  ci-unit-tests:
+    name: "⚙️ CI: Unit tests"
+    uses: ./.github/workflows/unit_tests.yml
+    with:
+      repo-ref: ${{ github.ref }}
+

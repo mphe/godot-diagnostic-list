@@ -1,0 +1,111 @@
+name: 🔎 Unit tests
+on:
+  workflow_call:
+    inputs:
+      godot-version:
+        description: Godot Engine version to use for testing.
+        type: string
+        default: 4.2.1-stable
+      repo-ref:
+        description: A commit, branch or tag to use for testing.
+        type: string
+        required: true
+
+  workflow_dispatch:
+    inputs:
+      godot-version:
+        description: Godot Engine version to use for testing.
+        type: string
+        default: 4.2.1-stable
+      repo-ref:
+        description: A commit, branch or tag to use for testing.
+        type: string
+        required: true
+
+jobs:
+  unit-tests-linux:
+    name: 🔎 Unit tests - Linux
+    runs-on: "ubuntu-latest"
+    # Needs to run in a container apparently, otherwise TCP connection won' work.
+    container: ghcr.io/catthehacker/ubuntu:act-latest
+
+    env:
+      DONWLOAD_URL: https://github.com/godotengine/godot/releases/download/${{inputs.godot-version}}/Godot_v${{inputs.godot-version}}_linux.x86_64.zip
+      BIN: Godot_v${{inputs.godot-version}}_linux.x86_64
+
+    steps:
+      - name: Setup
+        shell: bash
+        run: |
+          apt-get update
+          apt-get install -y wget unzip
+
+      - name: Download Godot
+        shell: bash
+        run: |
+          echo "Godot version: ${{ github.event.inputs.godot-version }}"
+          mkdir -p bin
+          cd bin
+          wget "${DONWLOAD_URL}" -O godot.zip
+          unzip godot.zip
+          chmod u+x ${BIN}
+          rm godot.zip
+          ls -l
+
+      - name: Clone repository
+        uses: actions/checkout@v4
+        with:
+          path: repo
+          ref: ${{ inputs.repo-ref }}
+
+      - name: Run tests
+        shell: bash
+        run: |
+          : # Run an editor process in background, because we need its LSP server. (also first time setup, like importing resources)
+          ./bin/${BIN} --headless --path ./repo/ --editor --lsp-port 6008 &
+          sleep 10
+          ./bin/${BIN} --headless --path ./repo/ --script addons/gut/gut_cmdln.gd -gdir=res://test/ -gexit
+
+  # unit-tests-windows:
+  #   name: 🔎 Unit tests - Windows
+  #   runs-on: "ubuntu-latest"
+  #   container: ghcr.io/catthehacker/ubuntu:act-latest
+  #
+  #   env:
+  #     DONWLOAD_URL: https://github.com/godotengine/godot/releases/download/${{inputs.godot-version}}/Godot_v${{inputs.godot-version}}_win32.exe.zip
+  #     BIN: Godot_v${{inputs.godot-version}}_win32.exe
+  #
+  #   steps:
+  #     - name: Setup
+  #       shell: bash
+  #       run: |
+  #         dpkg --add-architecture i386
+  #         apt-get update
+  #         apt-get install -y wget unzip wine-stable
+  #
+  #     - name: Download Godot
+  #       shell: bash
+  #       run: |
+  #         echo "Godot version: ${{ github.event.inputs.godot-version }}"
+  #         mkdir -p bin
+  #         cd bin
+  #         wget "${DONWLOAD_URL}" -O godot.zip
+  #         unzip godot.zip
+  #         chmod u+x ${BIN}
+  #         rm godot.zip
+  #         ls -l
+  #
+  #     - name: Clone repository
+  #       uses: actions/checkout@v4
+  #       with:
+  #         path: repo
+  #         ref: ${{ inputs.repo-ref }}
+  #
+  #     - name: Run tests
+  #       shell: bash
+  #       run: |
+  #         : # Run an editor process in background, because we need its LSP server
+  #         : # Yields an error 'wine: '/github/home' is not owned by you, refusing to create a configuration directory there'
+  #         wine ./bin/${BIN} --headless --path ./repo/ --editor --lsp-port 6008 &
+  #         sleep 10
+  #         wine ./bin/${BIN} --headless --path ./repo/ --script addons/gut/gut_cmdln.gd -gdir=res://test/ -gexit

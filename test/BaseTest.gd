@@ -16,7 +16,7 @@ func _connect_client() -> DiagnosticList_LSPClient:
 
     assert_false(client.is_lsp_connected())
 
-    client.connect_lsp_at("127.0.0.1", 6008)
+    client.connect_lsp_at("localhost", 6008)
     await wait_for_signal(client.on_initialized, 3)
 
     return client
@@ -26,7 +26,7 @@ func _get_diagnostics(client: DiagnosticList_LSPClient, res_path: String) -> Dia
     client.on_publish_diagnostics.connect(_on_publish_diagnostics)
 
     client.update_diagnostics(res_path, FileAccess.get_file_as_string(res_path))
-    await client.on_publish_diagnostics
+    await wait_for_signal(client.on_publish_diagnostics, 3)
 
     client.on_publish_diagnostics.disconnect(_on_publish_diagnostics)
 

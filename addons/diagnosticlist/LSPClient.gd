@@ -47,24 +47,27 @@ func disconnect_lsp() -> void:
 
 
 ## Connect to the LSP server using host and port specified in the editor config.
-func connect_lsp() -> void:
+func connect_lsp() -> bool:
     var settings := EditorInterface.get_editor_settings()
     var port: int = settings.get("network/language_server/remote_port")
     var host: String = settings.get("network/language_server/remote_host")
-    connect_lsp_at(host, port)
+    return connect_lsp_at(host, port)
 
 
 ## Connect to the LSP server at the given host and port.
-func connect_lsp_at(host: String, port: int) -> void:
+func connect_lsp_at(host: String, port: int) -> bool:
     var err := _client.connect_to_host(host, port)
 
     if err != OK:
         log_error("Failed to connect to LSP server: %s" % err)
+        return false
 
     # Enable processing
     _id = 0
     _timer.start()
     _reset_tick_interval()
+
+    return true
 
 
 func is_lsp_connected() -> bool:
