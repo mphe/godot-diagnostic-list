@@ -25,4 +25,4 @@ gdscript/warnings/unsafe_void_return=2
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/diagnosticlist/plugin.cfg")
+enabled=PackedStringArray("res://addons/diagnosticlist/plugin.cfg", "res://addons/gut/plugin.cfg")
