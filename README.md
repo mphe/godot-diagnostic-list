@@ -34,7 +34,11 @@ On the right side of the diagnostic panel are various controls:
   Toggling these buttons will show or hide those diagnostics from the list.
 
 
-Directories with a `.gdignore` file are ignored.
+## Ignoring Directories
+
+Directories with a `.gdignore` or `.diagnostic_ignore` file are ignored.
+The latter is useful for ignoring certain directories without interfering with Godot behavior.
+
 If the `debug/gdscript/warnings/exclude_addons` project setting is enabled, it will also ignore files in `addons/`.
 
 
@@ -48,7 +52,6 @@ If the `debug/gdscript/warnings/exclude_addons` project setting is enabled, it w
   Hence, this plugin is unable to connect to the correct Godot instance and report correct diagnostics in such cases.
 
 
-# Showcase
+## Showcase
 
 https://github.com/mphe/godot-diagnostic-list/assets/7116001/4c8c9784-94cc-4079-b929-8e2a076424e5
-

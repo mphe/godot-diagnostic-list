@@ -1,6 +1,11 @@
 extends RefCounted
 class_name DiagnosticList_DiagnosticProvider
 
+const IGNORE_FILES: Array[String] = [
+    ".gdignore",
+    ".diagnostic_ignore",
+]
+
 ## Triggered when new diagnostics for a file arrived.
 signal on_publish_diagnostics(diagnostics: DiagnosticList_Diagnostic.Pack)
 
@@ -239,8 +244,9 @@ func _gather_scripts(searchpath: String, ignore_dirs: Array[String]) -> Array[St
 
     var paths: Array[String] = []
 
-    if root.file_exists(".gdignore"):
-        return paths
+    for ignore_file in IGNORE_FILES:
+        if root.file_exists(ignore_file):
+            return paths
 
     root.include_navigational = false
     root.list_dir_begin()
