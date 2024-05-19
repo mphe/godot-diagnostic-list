@@ -42,9 +42,9 @@ The latter is useful for ignoring certain directories without interfering with G
 If the `debug/gdscript/warnings/exclude_addons` project setting is enabled, it will also ignore files in `addons/`.
 
 
-# Known Issues
+## Known Issues
 
-## Does not work correctly with multiple Godot instances
+### Does not work correctly with multiple Godot instances
 
   This addon relies on the language server protocol to retrieve diagnostics from Godot.
   Godot starts a language server on the port defined in the editor settings under `network/language_server/remote_port`.
