@@ -1,17 +1,29 @@
 # Godot Diagnostic List
 
+![Godot 4.2+ compatible](https://img.shields.io/badge/Godot-4.2+-%23478cbf?logo=godot-engine&logoColor=white)
+
+<img src="img/icon.png" width=110px align="right"/>
+
 This editor plugin provides project-wide diagnostics for GDScript files.<br/>
 It tracks every GDScript file in the project and gathers all errors and warnings in a global list.<br/>
-Especially useful when working on large-scale changes, e.g. refactoring or porting a project from Godot 3.x to 4.x.
+Useful in larger projects, during refactoring or porting a project from Godot 3.x to 4.x.
 
-Compatible with Godot 4.2+.
+<br/>
 
 ![Screenshot](img/screenshot.png)
+
+<br/>
+
+If you like this plugin and want to support my work, consider leaving a tip on Ko-fi.<br/>
+[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/Q5Q015GBOP)
 
 
 ## Installation
 
-1. Download the plugin from this repository or from the [Asset Library](https://godotengine.org/asset-library/asset/2482)
+1. Download the plugin
+    - From this repository
+    - From the [Asset Library](https://godotengine.org/asset-library/asset/2482)
+    - From the [Beta Asset Store](https://store-beta.godotengine.org/asset/mphe/diagnostic-list/)
 2. Copy the `addons/` directory to your project
 3. Enable the plugin in the project settings
 4. (Possibly) Restart Godot
