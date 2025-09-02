@@ -44,6 +44,8 @@ var _provider: DiagnosticList_DiagnosticProvider
 ## Alternative to _ready(). This will be called by plugin.gd to ensure the code in here only runs
 ## when this script is loaded as part of the plugin and not while editing the scene.
 func _plugin_ready() -> void:
+    DiagnosticList_Utils.log_debug("Panel _plugin_ready()")
+
     for i in len(_filter_buttons):
         var btn: Button = _filter_buttons[i]
         var severity := _severity_settings[i]
@@ -85,6 +87,8 @@ func _plugin_ready() -> void:
 
 ## Called by plugin.gd when the LSPClient is ready
 func start(provider: DiagnosticList_DiagnosticProvider) -> void:
+    DiagnosticList_Utils.log_debug("Panel start()")
+
     _provider = provider
 
     # Now that it is safe to do stuff, connect all the signals
@@ -109,6 +113,8 @@ func start(provider: DiagnosticList_DiagnosticProvider) -> void:
 
 
 func refresh() -> void:
+    DiagnosticList_Utils.log_debug("Panel refresh()")
+
     # NOTE: This list is sorted by file name as LSP publishes diagnostics per file
     # This is important as the group-by-file implementation relies on it.
     var diagnostics := _provider.get_diagnostics()
@@ -174,6 +180,8 @@ func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
 
 
 func _update_diagnostics(force: bool) -> void:
+    DiagnosticList_Utils.log_debug("Panel _update_diagnostics()")
+
     if _provider.is_updating() or _provider.refresh_diagnostics(force):
         _set_status_string("Updating...", false)
     else:

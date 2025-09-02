@@ -17,11 +17,14 @@ func _enter_tree() -> void:
     _dock.ready.connect(func() -> void: _dock._plugin_ready())
     add_control_to_bottom_panel(_dock, "Diagnostics")
 
+    DiagnosticList_Utils.log_debug("Plugin loaded")
+
 
 func _exit_tree() -> void:
     remove_control_from_bottom_panel(_dock)
     _dock.free()
     _client.disconnect_lsp()
+    DiagnosticList_Utils.log_debug("Plugin unloaded")
 
 
 func _on_lsp_initialized() -> void:
