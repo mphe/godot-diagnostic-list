@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           : # Run an editor process in background, because we need its LSP server. (also first time setup, like importing resources)
-          ./bin/${BIN} --headless --path ./repo/ --editor --lsp-port 6008 &
+          ./bin/${BIN} --headless --path ./repo/ --editor --lsp-port 6005 &
           sleep 10
           ./bin/${BIN} --headless --path ./repo/ --script addons/gut/gut_cmdln.gd -gdir=res://test/ -gexit
 
@@ -106,6 +106,6 @@ jobs:
   #       run: |
   #         : # Run an editor process in background, because we need its LSP server
   #         : # Yields an error 'wine: '/github/home' is not owned by you, refusing to create a configuration directory there'
-  #         wine ./bin/${BIN} --headless --path ./repo/ --editor --lsp-port 6008 &
+  #         wine ./bin/${BIN} --headless --path ./repo/ --editor --lsp-port 6005 &
   #         sleep 10
   #         wine ./bin/${BIN} --headless --path ./repo/ --script addons/gut/gut_cmdln.gd -gdir=res://test/ -gexit
