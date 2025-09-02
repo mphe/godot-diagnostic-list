@@ -67,4 +67,3 @@ func wait_for_signal(the_signal, x):
 
 func is_waiting():
 	return _wait_time != 0.0 || _wait_frames != 0
-
