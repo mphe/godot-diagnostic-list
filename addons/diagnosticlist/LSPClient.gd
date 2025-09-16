@@ -292,11 +292,11 @@ func _initialize() -> void:
 
 
 func _res_path_to_lsp_uri(res_path: String) -> String:
-    return URI_PREFIX + ProjectSettings.globalize_path(res_path).simplify_path()
+    return URI_PREFIX + ProjectSettings.globalize_path(res_path).simplify_path().uri_encode()
 
 
 func _lsp_uri_to_res_path(lsp_uri: String) -> String:
-    return ProjectSettings.localize_path(lsp_uri.replace(URI_PREFIX, ""))
+    return ProjectSettings.localize_path(lsp_uri.trim_prefix(URI_PREFIX).uri_decode())
 
 
 func log_debug(text: String) -> void:
