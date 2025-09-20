@@ -17,9 +17,24 @@ on:
       - "**/*.svg"
 
 jobs:
-  ci-unit-tests:
-    name: "⚙️ CI: Unit tests"
+  unit-tests-godot-4-2:
+    name: "⚙️ Unit tests - Godot 4.2.1"
     uses: ./.github/workflows/unit_tests.yml
     with:
       repo-ref: ${{ github.ref }}
-
+      godot-version: 4.2.1-stable
+      gut-tag: v9.3.0
+  unit-tests-godot-4-4:
+    name: "⚙️ Unit tests - Godot 4.4.1"
+    uses: ./.github/workflows/unit_tests.yml
+    with:
+      repo-ref: ${{ github.ref }}
+      godot-version: 4.4.1-stable
+      gut-tag: v9.4.0
+  unit-tests-godot-4-5:
+    name: "⚙️ Unit tests - Godot 4.5"
+    uses: ./.github/workflows/unit_tests.yml
+    with:
+      repo-ref: ${{ github.ref }}
+      godot-version: 4.5-stable
+      gut-tag: v9.5.0

@@ -5,7 +5,11 @@ on:
       godot-version:
         description: Godot Engine version to use for testing.
         type: string
-        default: 4.4.1-stable
+        required: true
+      gut-tag:
+        description: GUT version to use for unit testing.
+        type: string
+        required: true
       repo-ref:
         description: A commit, branch or tag to use for testing.
         type: string
@@ -16,7 +20,11 @@ on:
       godot-version:
         description: Godot Engine version to use for testing.
         type: string
-        default: 4.4.1-stable
+        required: true
+      gut-tag:
+        description: GUT version to use for unit testing.
+        type: string
+        required: true
       repo-ref:
         description: A commit, branch or tag to use for testing.
         type: string
@@ -30,7 +38,8 @@ jobs:
     container: ghcr.io/catthehacker/ubuntu:act-latest
 
     env:
-      DONWLOAD_URL: https://github.com/godotengine/godot/releases/download/${{inputs.godot-version}}/Godot_v${{inputs.godot-version}}_linux.x86_64.zip
+      DOWNLOAD_URL: https://github.com/godotengine/godot/releases/download/${{inputs.godot-version}}/Godot_v${{inputs.godot-version}}_linux.x86_64.zip
+      GUT_DOWNLOAD_URL: https://github.com/bitwes/Gut/archive/refs/tags/${{inputs.gut-tag}}.tar.gz
       BIN: Godot_v${{inputs.godot-version}}_linux.x86_64
 
     steps:
@@ -40,23 +49,49 @@ jobs:
           apt-get update
           apt-get install -y wget unzip
 
-      - name: Download Godot
-        shell: bash
-        run: |
-          echo "Godot version: ${{ github.event.inputs.godot-version }}"
-          mkdir -p bin
-          cd bin
-          wget "${DONWLOAD_URL}" -O godot.zip
-          unzip godot.zip
-          chmod u+x ${BIN}
-          rm godot.zip
-          ls -l
-
       - name: Clone repository
         uses: actions/checkout@v4
         with:
           path: repo
           ref: ${{ inputs.repo-ref }}
+
+      - name: Cache GUT
+        id: cache-gut
+        uses: actions/cache@v4
+        with:
+          path: repo/addons/gut
+          key: gut-${{inputs.gut-tag}}
+
+      - name: Setup GUT
+        if: steps.cache-gut.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "GUT version: ${{ github.event.inputs.gut-tag }}"
+          cd repo/addons || exit 1
+          rm -rf gut
+          wget -qO- "${GUT_DOWNLOAD_URL}" | tar -xz --strip-components=2
+          touch gut/.diagnostic_ignore
+          ls -l
+
+      - name: Cache Godot
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: bin
+          key: godot-${{inputs.godot-version}}
+
+      - name: Download Godot
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "Godot version: ${{ github.event.inputs.godot-version }}"
+          mkdir -p bin
+          cd bin
+          wget "${DOWNLOAD_URL}" -O godot.zip
+          unzip godot.zip
+          chmod u+x ${BIN}
+          rm godot.zip
+          ls -l
 
       - name: Run tests
         shell: bash
@@ -64,7 +99,7 @@ jobs:
           : # Run an editor process in background, because we need its LSP server. (also first time setup, like importing resources)
           ./bin/${BIN} --headless --path ./repo/ --editor --lsp-port 6005 &
           sleep 10
-          ./bin/${BIN} --headless --path ./repo/ --script addons/gut/gut_cmdln.gd -gdir=res://test/ -gexit
+          ./bin/${BIN} --headless --path ./repo/ -s addons/gut/gut_cmdln.gd -gdir=res://test/ -gexit
 
   # unit-tests-windows:
   #   name: 🔎 Unit tests - Windows
@@ -72,7 +107,7 @@ jobs:
   #   container: ghcr.io/catthehacker/ubuntu:act-latest
   #
   #   env:
-  #     DONWLOAD_URL: https://github.com/godotengine/godot/releases/download/${{inputs.godot-version}}/Godot_v${{inputs.godot-version}}_win32.exe.zip
+  #     DOWNLOAD_URL: https://github.com/godotengine/godot/releases/download/${{inputs.godot-version}}/Godot_v${{inputs.godot-version}}_win32.exe.zip
   #     BIN: Godot_v${{inputs.godot-version}}_win32.exe
   #
   #   steps:
@@ -89,7 +124,7 @@ jobs:
   #         echo "Godot version: ${{ github.event.inputs.godot-version }}"
   #         mkdir -p bin
   #         cd bin
-  #         wget "${DONWLOAD_URL}" -O godot.zip
+  #         wget "${DOWNLOAD_URL}" -O godot.zip
   #         unzip godot.zip
   #         chmod u+x ${BIN}
   #         rm godot.zip
