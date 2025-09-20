@@ -3,9 +3,10 @@ extends DiagnosticListTest
 
 func test_diagnostics() -> void:
     var client := await _connect_client()
-    var pack := await _get_diagnostics(client, "res://test_files/test.gd")
+    var pack := await _get_diagnostics(client, TEST_GD_FILE_WITH_DIAGNOSTICS)
     var diagnostics := pack.diagnostics
 
+    assert_eq(pack.res_uri, TEST_GD_FILE_WITH_DIAGNOSTICS)
     _assert_test_gd_diagnostics(diagnostics)
 
 

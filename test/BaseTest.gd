@@ -1,6 +1,7 @@
 extends GutTest
 class_name DiagnosticListTest
 
+const TEST_GD_FILE_WITH_DIAGNOSTICS = "res://test_files/test.gd"
 
 var _pack_buffer: DiagnosticList_Diagnostic.Pack
 
@@ -60,6 +61,9 @@ func _assert_test_gd_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic]) 
     diagnostics.sort_custom(_diagnostic_sort)
 
     assert_eq(diagnostics.size(), 3)
+
+    for i in diagnostics:
+        assert_eq(i.res_uri, TEST_GD_FILE_WITH_DIAGNOSTICS)
 
     var err_not_declared := diagnostics[0]
     assert_eq(err_not_declared.line_start, 5)
