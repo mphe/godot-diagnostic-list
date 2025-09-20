@@ -147,8 +147,12 @@ func get_diagnostic_count(severity: DiagnosticList_Diagnostic.Severity) -> int:
     return _counts[severity]
 
 
-## Returns all diagnostics of the project
+## Returns all diagnostics of the project.
+## The list of diagnostics is grouped by file, i.e. all diagnostics belonging to the same file are
+## consecutive elements.
 func get_diagnostics() -> Array[DiagnosticList_Diagnostic]:
+    # NOTE: The LSP server usually publishes diagnostics consecutively per file and not in random
+    # order. Hence we do not need additional sorting to fulfill the contract of this method.
     return _diagnostics.duplicate()
 
 

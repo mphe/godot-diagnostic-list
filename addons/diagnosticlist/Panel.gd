@@ -115,13 +115,12 @@ func start(provider: DiagnosticList_DiagnosticProvider) -> void:
 func refresh() -> void:
     DiagnosticList_Utils.log_debug("Panel refresh()")
 
-    # NOTE: This list is sorted by file name as LSP publishes diagnostics per file
-    # This is important as the group-by-file implementation relies on it.
+    # NOTE: This list is grouped by file name. This is important as the group-by-file implementation relies on it.
     var diagnostics := _provider.get_diagnostics()
     var group_by_file := _cb_group_by_file.button_pressed
 
     if not group_by_file:
-        diagnostics.sort_custom(_sort_by_severity)
+        diagnostics.sort_custom(DiagnosticList_Utils.sort_by_severity)
 
     # Show refresh time
     _set_status_string("Up-to-date", true)
@@ -158,12 +157,6 @@ func _set_status_string(text: String, with_last_time: bool) -> void:
         _label_refresh_time.text = "%s\n%.2f s" % [ text, _provider.get_refresh_time_usec() / 1000000.0 ]
     else:
         _label_refresh_time.text = text
-
-
-func _sort_by_severity(a: DiagnosticList_Diagnostic, b: DiagnosticList_Diagnostic) -> bool:
-    if a.severity == b.severity:
-        return a.res_uri < b.res_uri
-    return a.severity < b.severity
 
 
 func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
