@@ -1,4 +1,5 @@
 extends GutTest
+class_name DiagnosticListTest
 
 
 var _pack_buffer: DiagnosticList_Diagnostic.Pack

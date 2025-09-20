@@ -1,4 +1,4 @@
-extends "res://test/BaseTest.gd"
+extends DiagnosticListTest
 
 
 func test_diagnostics() -> void:

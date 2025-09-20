@@ -9,6 +9,9 @@ var _provider: DiagnosticList_DiagnosticProvider
 
 
 func _enter_tree() -> void:
+    # Wait a moment until the LSP server started
+    await get_tree().create_timer(1.0).timeout
+
     _client = DiagnosticList_LSPClient.new(self)
     _client.on_initialized.connect(_on_lsp_initialized)
     _client.connect_lsp()

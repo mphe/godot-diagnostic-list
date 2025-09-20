@@ -1,4 +1,4 @@
-extends "res://test/BaseTest.gd"
+extends DiagnosticListTest
 
 
 func test_connect() -> void:
@@ -20,11 +20,12 @@ func test_connect() -> void:
 func test_jsonrpc_error() -> void:
     var client := await _connect_client()
 
-    client._send_notification("asdf", {})
+    client._send_request("asdf", {})
 
     await wait_for_signal(client.on_jsonrpc_error, 3)
 
     assert_signal_emit_count(client, "on_jsonrpc_error", 1)
+    assert_push_error(2)
 
     client.disconnect_lsp()
 
