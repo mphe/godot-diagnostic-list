@@ -300,7 +300,9 @@ func _initialize() -> void:
 
 
 func _res_path_to_lsp_uri(res_path: String) -> String:
-    return URI_PREFIX + ProjectSettings.globalize_path(res_path).simplify_path().uri_encode()
+    # NOTE: No need to manually call uri_encode() as JSONRPC seems to do that automatically
+    # TODO: Consider using the builtin parsing functionality of JSONRPC instead of doing it manually
+    return URI_PREFIX + ProjectSettings.globalize_path(res_path).simplify_path()
 
 
 func _lsp_uri_to_res_path(lsp_uri: String) -> String:
