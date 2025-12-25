@@ -14,6 +14,7 @@ class DiagnosticSeveritySettings extends RefCounted:
 
 
 @onready var _btn_refresh_errors: Button = %"btn_refresh_errors"
+@onready var _btn_copy_all: Button = %"btn_copy_all"
 @onready var _error_list_tree: Tree = %"error_tree_list"
 @onready var _cb_auto_refresh: CheckBox = %"cb_auto_refresh"
 @onready var _cb_group_by_file: CheckBox = %"cb_group_by_file"
@@ -39,6 +40,7 @@ class DiagnosticSeveritySettings extends RefCounted:
 @onready var _script_icon: Texture2D = get_theme_icon(&"Script", &"EditorIcons")
 
 var _provider: DiagnosticList_DiagnosticProvider
+var _current_diagnostics: Array[DiagnosticList_Diagnostic]
 
 
 ## Alternative to _ready(). This will be called by plugin.gd to ensure the code in here only runs
@@ -96,6 +98,7 @@ func start(provider: DiagnosticList_DiagnosticProvider) -> void:
     _provider.on_update_progress.connect(_on_update_progress)
 
     _btn_refresh_errors.pressed.connect(_on_force_refresh)
+    _btn_copy_all.pressed.connect(_on_copy_all_pressed)
     _cb_group_by_file.toggled.connect(_on_group_by_file_toggled)
     _cb_auto_refresh.toggled.connect(_on_auto_refresh_toggled)
     _error_list_tree.item_activated.connect(_on_item_activated)
@@ -119,6 +122,8 @@ func refresh() -> void:
     var diagnostics := _provider.get_diagnostics()
     var group_by_file := _cb_group_by_file.button_pressed
 
+    _current_diagnostics = diagnostics
+
     if not group_by_file:
         diagnostics.sort_custom(DiagnosticList_Utils.sort_by_severity)
 
@@ -132,10 +137,13 @@ func refresh() -> void:
     # Create diagnostics
     var last_uri: StringName
     var parent: TreeItem = null
+    var visible_count := 0
 
     for diag in diagnostics:
         if not _filter_buttons[diag.severity].button_pressed:
             continue
+
+        visible_count += 1
 
         # If grouping by file, create header entries if necessary
         if group_by_file and diag.res_uri != last_uri:
@@ -150,6 +158,9 @@ func refresh() -> void:
     # Update diagnostic counts
     for i in len(_filter_buttons):
         _filter_buttons[i].text = str(_provider.get_diagnostic_count(i))
+
+    # Enable/disable copy button based on visible diagnostics
+    _btn_copy_all.disabled = visible_count == 0
 
 
 func _set_status_string(text: String, with_last_time: bool) -> void:
@@ -228,3 +239,11 @@ func _on_filter_toggled(_toggled_on: bool) -> void:
 
 func _on_group_by_file_toggled(_toggled_on: bool) -> void:
     refresh()
+
+
+func _on_copy_all_pressed() -> void:
+    var text: String = ""
+    for diag in _current_diagnostics:
+        if _filter_buttons[diag.severity].button_pressed:
+            text += "%s: %s in %s:%d\n" % [_severity_settings[diag.severity].text, diag.message, diag.get_filename(), diag.line_start + 1]
+    DisplayServer.clipboard_set(text)
