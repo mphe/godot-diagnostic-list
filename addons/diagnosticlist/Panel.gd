@@ -14,6 +14,8 @@ class DiagnosticSeveritySettings extends RefCounted:
 
 
 @onready var _btn_refresh_errors: Button = %"btn_refresh_errors"
+@onready var _btn_copy_all: Button = %"btn_copy_all"
+@onready var _btn_copy_selected: Button = %"btn_copy_selected"
 @onready var _error_list_tree: Tree = %"error_tree_list"
 @onready var _cb_auto_refresh: CheckBox = %"cb_auto_refresh"
 @onready var _cb_group_by_file: CheckBox = %"cb_group_by_file"
@@ -39,6 +41,7 @@ class DiagnosticSeveritySettings extends RefCounted:
 @onready var _script_icon: Texture2D = get_theme_icon(&"Script", &"EditorIcons")
 
 var _provider: DiagnosticList_DiagnosticProvider
+var _last_selected_item: TreeItem
 
 
 ## Alternative to _ready(). This will be called by plugin.gd to ensure the code in here only runs
@@ -79,6 +82,8 @@ func _plugin_ready() -> void:
     _error_list_tree.set_column_clip_content(1, true)
     _error_list_tree.set_column_clip_content(2, false)
     _error_list_tree.set_column_expand_ratio(0, 4)
+    _error_list_tree.select_mode = Tree.SELECT_MULTI
+    _error_list_tree.gui_input.connect(_on_tree_gui_input)
 
     _multiple_instances_alert.add_button("More Information", true, "https://github.com/mphe/godot-diagnostic-list#does-not-work-correctly-with-multiple-godot-instances")
     _multiple_instances_alert.custom_action.connect(func(action: StringName) -> void: OS.shell_open(action))
@@ -96,6 +101,8 @@ func start(provider: DiagnosticList_DiagnosticProvider) -> void:
     _provider.on_update_progress.connect(_on_update_progress)
 
     _btn_refresh_errors.pressed.connect(_on_force_refresh)
+    _btn_copy_all.pressed.connect(_on_copy_all)
+    _btn_copy_selected.pressed.connect(_on_copy_selected)
     _cb_group_by_file.toggled.connect(_on_group_by_file_toggled)
     _cb_auto_refresh.toggled.connect(_on_auto_refresh_toggled)
     _error_list_tree.item_activated.connect(_on_item_activated)
@@ -172,6 +179,15 @@ func _create_entry(diag: DiagnosticList_Diagnostic, parent: TreeItem) -> void:
     entry.set_metadata(0, diag)  # Meta data is used in _on_item_activated to open the respective script
 
 
+func _format_diagnostic(diag: DiagnosticList_Diagnostic) -> String:
+    return "[%s] %s:%d - %s" % [
+        _severity_settings[diag.severity].text,
+        diag.get_filename(),
+        diag.line_start + 1,
+        diag.message
+    ]
+
+
 func _update_diagnostics(force: bool) -> void:
     DiagnosticList_Utils.log_debug("Panel _update_diagnostics()")
 
@@ -189,6 +205,18 @@ func _start_stop_auto_refresh() -> void:
     else:
         visibility_changed.disconnect(_on_auto_update)
         _provider.on_diagnostics_available.disconnect(_on_auto_update)
+
+
+func _get_flat_tree_items() -> Array[TreeItem]:
+    var items: Array[TreeItem] = []
+    var stack: Array[TreeItem] = [_error_list_tree.get_root()]
+    while not stack.is_empty():
+        var item := stack.pop_back()
+        if item != _error_list_tree.get_root():
+            items.append(item)
+        for child in item.get_children():
+            stack.append(child)
+    return items
 
 
 func _on_item_activated() -> void:
@@ -228,3 +256,45 @@ func _on_filter_toggled(_toggled_on: bool) -> void:
 
 func _on_group_by_file_toggled(_toggled_on: bool) -> void:
     refresh()
+
+func _on_copy_all() -> void:
+    var lines: PackedStringArray = []
+    for diag in _provider.get_diagnostics():
+        if _filter_buttons[diag.severity].button_pressed:
+            lines.append(_format_diagnostic(diag))
+    if lines.is_empty():
+        _set_status_string("Nothing to copy", false)
+        return
+    DisplayServer.clipboard_set("\n".join(lines))
+    _set_status_string("Copied %d item(s)" % lines.size(), false)
+
+func _on_copy_selected() -> void:
+    var lines: PackedStringArray = []
+    var item := _error_list_tree.get_next_selected(null)
+    while item:
+        var diag: DiagnosticList_Diagnostic = item.get_metadata(0)
+        if diag:
+            lines.append(_format_diagnostic(diag))
+        item = _error_list_tree.get_next_selected(item)
+    if lines.is_empty():
+        _set_status_string("Nothing selected", false)
+        return
+    DisplayServer.clipboard_set("\n".join(lines))
+    _set_status_string("Copied %d item(s)" % lines.size(), false)
+
+func _on_tree_gui_input(event: InputEvent) -> void:
+    if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+        return
+    var clicked := _error_list_tree.get_item_at_position(event.position)
+    if clicked == null:
+        return
+    if event.shift_pressed and _last_selected_item:
+        var items := _get_flat_tree_items()
+        var from := items.find(_last_selected_item)
+        var to := items.find(clicked)
+        if from != -1 and to != -1:
+            for i in range(mini(from, to), maxi(from, to) + 1):
+                items[i].select(0)
+        _error_list_tree.accept_event()
+    else:
+        _last_selected_item = clicked
