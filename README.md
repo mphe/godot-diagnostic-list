@@ -63,14 +63,13 @@ If the `debug/gdscript/warnings/exclude_addons` project setting is enabled, it w
   If the port is already in use, e.g. by the LS of another Godot instance, Godot is unable to start a new LS.
   Hence, this plugin is unable to connect to the correct Godot instance and report correct diagnostics in such cases.
 
-### Godot freezes in larger projects on Windows 11
+### Godot freezes in larger projects
 
-In larger projects, refreshing diagnostics or opening the diagnostic panel (which may trigger a refresh) can cause Godot to freeze on Windows 11.<br/>
-This seems to be a bug in Windows 11's [TCP window scaling](https://en.wikipedia.org/wiki/TCP_window_scale_option) implementation.
+In larger projects, refreshing diagnostics or opening the diagnostic panel (which may trigger a refresh) can cause Godot to freeze. This issue was reported on Windows 11 and MacOS 26.2. Linux and earlier versions of Windows don't seem to be affected.<br/>
 
 The workaround is to enable `Use Thread` under `Editor settings -> Network -> Language server`.
 
-See also [#2](https://github.com/mphe/godot-diagnostic-list/issues/2).
+See also [#2](https://github.com/mphe/godot-diagnostic-list/issues/2) for more information.
 
 ## Showcase
 
