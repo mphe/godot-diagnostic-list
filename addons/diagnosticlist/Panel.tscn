@@ -46,6 +46,11 @@ layout_mode = 2
 auto_translate = false
 text = "Refresh"
 
+[node name="btn_copy_all" type="Button" parent="HBoxContainer/VBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Copy All"
+
 [node name="HSeparator" type="HSeparator" parent="HBoxContainer/VBoxContainer"]
 layout_mode = 2
 
