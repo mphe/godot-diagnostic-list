@@ -25,7 +25,7 @@ var _jsonrpc := JSONRPC.new()
 var _client := StreamPeerTCP.new()
 var _id: int = 0
 var _timer: Timer
-var _lsp_project_path: String = ""  # Absolute project path reported by LS
+var _lsp_project_path: String = ProjectSettings.globalize_path("res://").simplify_path()  # Absolute project path reported by LS
 
 
 func _init(root: Node) -> void:
@@ -289,8 +289,11 @@ func _send(json: Dictionary) -> void:
 
 
 func _initialize() -> void:
+    var root_path := ProjectSettings.globalize_path("res://").simplify_path()
     _send_request("initialize", {
         "processId": null,
+        "rootUri": URI_PREFIX + root_path,
+        "rootPath": root_path,
         "capabilities": {
             "textDocument": {
                 "publishDiagnostics": {},
