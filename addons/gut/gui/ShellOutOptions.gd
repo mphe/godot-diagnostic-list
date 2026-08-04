@@ -217,7 +217,7 @@ func _add_controls():
 	_txt_additional_arguments.value_ctrl.select_all_on_focus = false
 	_add_blurb(
 		"Supply any command line options for GUT and/or Godot when running externally.  You cannot use " +
-		"spaces in values.  See the Godot and GUT documentation for valid arguments.  GUT arguments " + 
+		"spaces in values.  See the Godot and GUT documentation for valid arguments.  GUT arguments " +
 		"specified here take precedence over your config.")
 	_add_blurb("[b]Be Careful[/b]  There are plenty of argument combinations that may make this " +
 		"act wrong/odd/bad/horrible.  Some arguments you might [i]want[/i] " +

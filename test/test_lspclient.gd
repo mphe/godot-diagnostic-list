@@ -25,7 +25,7 @@ func test_jsonrpc_error() -> void:
     await wait_for_signal(client.on_jsonrpc_error, 3)
 
     assert_signal_emit_count(client, "on_jsonrpc_error", 1)
-    assert_push_error(2)
+    assert_push_error_count(2)
 
     client.disconnect_lsp()
 

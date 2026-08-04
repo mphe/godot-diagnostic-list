@@ -100,7 +100,7 @@ func _get_first_child_named(obj_name, parent_obj):
 			to_return = _get_first_child_named(obj_name, kids[index])
 			if(to_return == null):
 				index += 1
-	
+
 	return to_return
 
 

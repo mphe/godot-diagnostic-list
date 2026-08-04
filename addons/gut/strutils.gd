@@ -83,10 +83,10 @@ func _get_obj_filename(thing):
 			# we do nothing.  This just reads better.
 			pass
 	elif(!GutUtils.is_native_class(thing)):
-		var dict = inst_to_dict(thing)
-		filename = _get_filename(dict['@path'])
-		if(str(dict['@subpath']) != ''):
-			filename += str('/', dict['@subpath'])
+		if(GutUtils.is_inner_class(thing.get_script())):
+			filename = GutUtils.inner_class_registry.get_full_path(thing.get_script())
+		else:
+			filename = thing.get_script().resource_path.get_file()
 
 	return filename
 
@@ -122,8 +122,8 @@ func type2str(thing):
 			var double_path = _get_filename(thing.__gutdbl.thepath)
 			if(thing.__gutdbl.subpath != ''):
 				double_path += str('/', thing.__gutdbl.subpath)
-			elif(thing.__gutdbl.from_singleton != ''):
-				double_path = thing.__gutdbl.from_singleton + " Singleton"
+			elif(thing.__gutdbl.singleton_name != ''):
+				double_path = thing.__gutdbl.singleton_name + " Singleton"
 
 			var double_type = "double"
 			if(thing.__gutdbl.is_partial):
@@ -153,25 +153,22 @@ func truncate_string(src, max_size):
 	return to_return
 
 
-func _get_indent_text(times, pad):
-	var to_return = ''
-	for i in range(times):
-		to_return += pad
-
-	return to_return
-
-func indent_text(text, times, pad):
+## Indents multiline text. Indents every line of [param text] with [param times]
+## copies of the String [param pad]. If the string ends with a newline,
+## no indent is added after that newline character and the resulting string
+## will still end on a newline.
+func indent_text(text: String, times: int, pad: String) -> String:
 	if(times == 0):
 		return text
 
-	var to_return = text
-	var ending_newline = ''
+	var to_return := text
+	var ending_newline := ''
 
 	if(text.ends_with("\n")):
 		ending_newline = "\n"
-		to_return = to_return.left(to_return.length() -1)
+		to_return = to_return.left(-1)
 
-	var padding = _get_indent_text(times, pad)
+	var padding := pad.repeat(times)
 	to_return = to_return.replace("\n", "\n" + padding)
 	to_return += ending_newline
 
