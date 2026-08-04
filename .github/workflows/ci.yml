@@ -38,3 +38,17 @@ jobs:
       repo-ref: ${{ github.ref }}
       godot-version: 4.5-stable
       gut-tag: v9.5.0
+  unit-tests-godot-4-6:
+    name: "⚙️ Unit tests - Godot 4.6.3"
+    uses: ./.github/workflows/unit_tests.yml
+    with:
+      repo-ref: ${{ github.ref }}
+      godot-version: 4.6.3-stable
+      gut-tag: v9.6.1
+  unit-tests-godot-4-7:
+    name: "⚙️ Unit tests - Godot 4.7.1"
+    uses: ./.github/workflows/unit_tests.yml
+    with:
+      repo-ref: ${{ github.ref }}
+      godot-version: 4.7.1-stable
+      gut-tag: v9.7.1

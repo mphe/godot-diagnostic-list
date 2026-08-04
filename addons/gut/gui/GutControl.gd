@@ -260,7 +260,7 @@ func run_tests(options = null):
 		_config.options = _config_gui.get_options(_config.options)
 	else:
 		_config.options = options
-		
+
 	# We ar running from within the game, so we should not exit, ever.
 	_config.options.should_exit_on_success = false
 	_config.options.should_exit = false

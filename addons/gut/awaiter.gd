@@ -1,6 +1,6 @@
 extends Node
 
-class AwaitLogger:
+class GutAwaiterLogger:
 	var _time_waited = 0.0
 	var logger = GutUtils.get_logger()
 	var waiting_on = "nothing"
@@ -31,7 +31,7 @@ class AwaitLogger:
 signal timeout
 signal wait_started
 
-var await_logger = AwaitLogger.new()
+var await_logger = GutAwaiterLogger.new()
 var _wait_time := 0.0
 var _wait_process_frames := 0
 var _wait_physics_frames := 0
@@ -196,6 +196,6 @@ func wait_while(predicate_function: Callable, max_time, time_between_calls:=0.0,
 
 
 func is_waiting():
-	return _wait_time != 0.0 || \
-		_wait_physics_frames != 0 || \
+	return _wait_time != 0.0 or \
+		_wait_physics_frames != 0 or \
 		_wait_process_frames != 0

@@ -77,5 +77,10 @@ func _assert_test_gd_diagnostics(diagnostics: Array[DiagnosticList_Diagnostic]) 
 
     var warn_unused := diagnostics[2]
     assert_eq(warn_unused.line_start, 8)
-    assert_eq(warn_unused.column_start, 0)
+
+    if Engine.get_version_info().hex < 0x040700:
+        assert_eq(warn_unused.column_start, 0)
+    else:
+        assert_eq(warn_unused.column_start, 14)
+
     assert_eq(warn_unused.severity, DiagnosticList_Diagnostic.Severity.Warning)

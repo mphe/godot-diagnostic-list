@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://cftcb0e6g7tu1"]
+[gd_scene format=3 uid="uid://cftcb0e6g7tu1"]
 
 [ext_resource type="Script" uid="uid://bi8pg352un4om" path="res://addons/gut/gui/RunExternally.gd" id="1_lrqqi"]
 
@@ -11,7 +11,7 @@ corner_radius_bottom_left = 20
 shadow_size = 5
 shadow_offset = Vector2(7, 7)
 
-[node name="DoShellOut" type="Control"]
+[node name="DoShellOut" type="Control" unique_id=1326996178]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 774.0
@@ -19,7 +19,7 @@ offset_bottom = 260.0
 script = ExtResource("1_lrqqi")
 bg_color = Color(0.025935074, 0.17817128, 0.30283752, 1)
 
-[node name="BgControl" type="Panel" parent="."]
+[node name="BgControl" type="Panel" parent="." unique_id=844341998]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,7 +28,7 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_haowt")
 
-[node name="VBox" type="VBoxContainer" parent="BgControl"]
+[node name="VBox" type="VBoxContainer" parent="BgControl" unique_id=2042869939]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,28 +36,28 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Spacer" type="CenterContainer" parent="BgControl/VBox"]
+[node name="Spacer" type="CenterContainer" parent="BgControl/VBox" unique_id=1867700404]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Title" type="Label" parent="BgControl/VBox"]
+[node name="Title" type="Label" parent="BgControl/VBox" unique_id=801748032]
 layout_mode = 2
 text = "Running Tests"
 horizontal_alignment = 1
 
-[node name="Spacer2" type="CenterContainer" parent="BgControl/VBox"]
+[node name="Spacer2" type="CenterContainer" parent="BgControl/VBox" unique_id=159884815]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="Kill" type="Button" parent="BgControl/VBox"]
+[node name="Kill" type="Button" parent="BgControl/VBox" unique_id=583668597]
 visible = false
 custom_minimum_size = Vector2(200, 50)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "Stop"
 
-[node name="Spacer3" type="CenterContainer" parent="BgControl/VBox"]
+[node name="Spacer3" type="CenterContainer" parent="BgControl/VBox" unique_id=314407524]
 layout_mode = 2
 size_flags_vertical = 3
 
