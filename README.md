@@ -23,7 +23,7 @@ If you like this plugin and want to support my work, consider leaving a tip on K
 1. Download the plugin
     - From this repository
     - From the [Asset Library](https://godotengine.org/asset-library/asset/2482)
-    - From the [Beta Asset Store](https://store-beta.godotengine.org/asset/mphe/diagnostic-list/)
+    - From the [Beta Asset Store](https://store.godotengine.org/asset/mphe/diagnostic-list/)
 2. Copy the `addons/` directory to your project
 3. Enable the plugin in the project settings
 4. (Possibly) Restart Godot
