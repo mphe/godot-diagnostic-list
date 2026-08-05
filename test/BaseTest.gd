@@ -17,10 +17,13 @@ func _connect_client() -> DiagnosticList_LSPClient:
     watch_signals(client)
 
     assert_false(client.is_lsp_connected())
+    assert_false(client.lsp_root_matches_project_root())
 
     assert(client.connect_lsp_at("127.0.0.1", 6005), "Failed to connect")
 
     await wait_for_signal(client.on_initialized, 3)
+
+    assert_true(client.lsp_root_matches_project_root())
 
     return client
 
