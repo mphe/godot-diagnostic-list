@@ -99,7 +99,7 @@ jobs:
           : # Run an editor process in background, because we need its LSP server. (also first time setup, like importing resources)
           ./bin/${BIN} --headless --path ./repo/ --editor --lsp-port 6005 &
           sleep 10
-          ./bin/${BIN} --headless --path ./repo/ -s addons/gut/gut_cmdln.gd -gdir=res://test/ -gexit
+          ./bin/${BIN} --headless --path ./repo/ -s addons/gut/gut_cmdln.gd -gexit
 
   # unit-tests-windows:
   #   name: 🔎 Unit tests - Windows
